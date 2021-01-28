@@ -121,6 +121,9 @@ namespace geopm
             double m_uncore_init_max;
             double m_default_freq;
             double m_uncore_freq;
+            double m_barrier_uncore_freq;
+            int m_board_hash_signal_idx;
+            double m_board_hash;
     };
 }
 

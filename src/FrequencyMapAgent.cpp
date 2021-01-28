@@ -85,6 +85,9 @@ namespace geopm
         , m_uncore_init_max(NAN)
         , m_default_freq(NAN)
         , m_uncore_freq(NAN)
+        , m_barrier_uncore_freq(1.0e9)
+        , m_board_hash_signal_idx(-1)
+        , m_board_hash(NAN)
     {
 
     }
@@ -301,6 +304,9 @@ namespace geopm
             }
         }
 
+        if (m_board_hash == 0x7b561f45) {
+            m_uncore_freq = m_barrier_uncore_freq;
+        }
         // adjust fixed uncore freq
         if (m_last_uncore_freq != m_uncore_freq) {
             if (!std::isnan(m_uncore_freq)) {
@@ -327,6 +333,7 @@ namespace geopm
         for (size_t ctl_idx = 0; ctl_idx < (size_t) m_num_freq_ctl_domain; ++ctl_idx) {
             m_last_hash[ctl_idx] = m_platform_io.sample(m_hash_signal_idx[ctl_idx]);
         }
+        m_board_hash = m_platform_io.sample(m_board_hash_signal_idx);
     }
 
     void FrequencyMapAgent::wait(void)
@@ -450,6 +457,9 @@ namespace geopm
                                                                     m_freq_ctl_domain_type,
                                                                     ctl_idx));
         }
+        m_board_hash_signal_idx = m_platform_io.push_signal("REGION_HASH",
+                                                            GEOPM_DOMAIN_BOARD,
+                                                            0);
         m_uncore_min_ctl_idx = m_platform_io.push_control("MSR::UNCORE_RATIO_LIMIT:MIN_RATIO", GEOPM_DOMAIN_BOARD, 0);
         m_uncore_max_ctl_idx = m_platform_io.push_control("MSR::UNCORE_RATIO_LIMIT:MAX_RATIO", GEOPM_DOMAIN_BOARD, 0);
 
