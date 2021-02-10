@@ -34,6 +34,7 @@
 #include "OMPT.hpp"
 #include "geopm.h"
 #include <omp-tools.h>
+#include <iostream>
 
 
 extern "C"
@@ -65,6 +66,7 @@ extern "C"
                                    uint64_t count,
                                    const void *parallel_function)
     {
+std::cerr << "geopm_tprof_init(" << count << ")\n";
         geopm_tprof_init(count);
     }
 
@@ -73,6 +75,7 @@ extern "C"
                                        ompt_dispatch_t kind,
                                        ompt_data_t instance)
     {
+std::cerr << "geopm_tprof_post()\n";
         geopm_tprof_post();
     }
 
