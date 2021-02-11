@@ -123,6 +123,10 @@ namespace geopm
                 ModelRegion::loop_enter(i);
 #pragma omp parallel for
                 for (size_t j = 0; j < block_size; ++j) {
+                    if (!m_do_progress) {
+                        // If user marked progress is not requested use ompt
+                        geopm_tprof_post();
+                    }
                     m_array_a[i * block_size + j] = m_array_b[i * block_size + j] + scalar * m_array_c[i * block_size + j];
                 }
 
