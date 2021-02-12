@@ -30,51 +30,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-
 #include <mpi.h>
-#include <cmath>
-#include <string>
 #include <vector>
-#include <memory>
-
 #include "geopm.h"
-#include "Profile.hpp"
-#include "Exception.hpp"
-#include "ModelRegion.hpp"
 
 int main(int argc, char **argv)
 {
-    // Start MPI
-    int comm_rank;
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-    // Parse command line option for verbosity
-    bool is_verbose = false;
-    if (comm_rank == 0) {
-        for (int arg_idx = 1; arg_idx < argc; ++arg_idx) {
-            std::string arg(argv[arg_idx]);
-            if (arg == "--verbose" || arg == "-v") {
-                is_verbose = true;
-            }
-        }
-    }
-    // Create a model region
-    std::unique_ptr<geopm::ModelRegion> model(
-        geopm::ModelRegion::model_region("spin", 0.005, is_verbose));
+    int vec_size = 134217728; // 1 GB
 
-    // Rename model region to the test name
-    geopm::Profile &prof = geopm::Profile::default_profile();
-    std::string region_name = "progress";
-    uint64_t rid = prof.region(region_name, GEOPM_REGION_HINT_UNKNOWN);
-    // Loop over 1000 iterations of executing the renamed region
-    int num_step = 1000;
-    for (int idx = 0; idx != num_step; ++idx) {
-        prof.enter(rid);
-        model->run();
-        prof.exit(rid);
+    std::vector<double> aa_vec(vec_size);
+    std::vector<double> bb_vec(vec_size);
+    std::vector<double> cc_vec(vec_size);
+    double scalar = 3.0;
+
+#pragma omp parallel for
+    for (int idx = 0; idx < vec_size; ++idx) {
+        geopm_tprof_post();
+        aa_vec[idx] = 0.0;
+        aa_vec[idx] = 1.0;
+        aa_vec[idx] = 2.0;
     }
-    // Shutdown MPI
+
+#pragma omp parallel for
+    for (int idx = 0; idx < vec_size; ++idx) {
+        geopm_tprof_post();
+        aa_vec[idx] = bb_vec[idx] + scalar * cc_vec[idx];
+    }
+
     MPI_Finalize();
     return 0;
 }

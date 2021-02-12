@@ -31,26 +31,19 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-"""PROGRESS
-
-"""
-
 import sys
 import unittest
 import os
-import glob
+import pandas
+import socket
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from integration.test import geopm_context
-import geopmpy.io
-import geopmpy.error
-
 from integration.test import util
-if util.do_launch():
-    # Note: this import may be moved outside of do_launch if needed to run
-    # commands on compute nodes such as geopm_test_launcher.geopmread
-    from integration.test import geopm_test_launcher
-    geopmpy.error.exc_clear()
+import geopmpy.io
+from integration.experiment import machine
+import geopm_test_launcher
+
 
 class AppConf(object):
     """Class that is used by the test launcher in place of a
@@ -68,8 +61,7 @@ class AppConf(object):
         """Path to benchmark filled in by template automatically.
 
         """
-        script_dir = os.path.dirname(os.path.realpath(__file__))
-        return os.path.join(script_dir, '.libs', 'test_progress')
+        return util.get_exec_path('test_progress')
 
     def get_exec_args(self):
         """Returns a list of strings representing the command line arguments
@@ -89,54 +81,48 @@ class TestIntegration_progress(unittest.TestCase):
         """
         sys.stdout.write('(' + os.path.basename(__file__).split('.')[0] +
                          '.' + cls.__name__ + ') ...')
-        test_name = 'progress'
-        cls._report_path = 'test_{}.report'.format(test_name)
-        cls._trace_path = 'test_{}.trace'.format(test_name)
-        cls._image_path = 'test_{}.png'.format(test_name)
-        cls._skip_launch = not util.do_launch()
-        cls._agent_conf_path = 'test_' + test_name + '-agent-config.json'
+        cls._test_name = 'test_progress'
+        cls._report_path = '{}.report'.format(cls._test_name)
+        cls._trace_path = '{}.trace'.format(cls._test_name)
+        cls._agent_conf_path = cls._test_name + '-agent-config.json'
         # Clear out exception record for python 2 support
         geopmpy.error.exc_clear()
-        if not cls._skip_launch:
-            # Set the job size parameters
-            num_node = 1
-            num_rank = 1
-            time_limit = 6000
-            # Configure the test application
-            app_conf = AppConf()
-            # Configure the agent
-            # Query for the min and sticker frequency and run the
-            # energy efficient agent over this range.
-            freq_min = geopm_test_launcher.geopmread("CPUINFO::FREQ_MIN board 0")
-            freq_sticker = geopm_test_launcher.geopmread("CPUINFO::FREQ_STICKER board 0")
-            agent_conf_dict = {'FREQ_MIN': freq_min,
-                               'FREQ_MAX': freq_sticker}
-            agent_conf = geopmpy.io.AgentConf(cls._agent_conf_path,
-                                              'energy_efficient',
-                                              agent_conf_dict)
-            # Create the test launcher with the above configuration
-            launcher = geopm_test_launcher.TestLauncher(app_conf,
-                                                        agent_conf,
-                                                        cls._report_path,
-                                                        cls._trace_path,
-                                                        time_limit=time_limit)
-            launcher.set_num_node(num_node)
-            launcher.set_num_rank(num_rank)
-            # Run the test application
-            launcher.run('test_' + test_name)
 
+        # Create machine
+        cls._machine = machine.Machine()
+        try:
+            cls._machine.load()
+            sys.stderr.write('Warning: {}: using existing file "machine.json", delete if invalid\n'.format(cls._test_name))
+        except RuntimeError:
+            cls._machine.save()
 
-    def tearDown(self):
-        if sys.exc_info() != (None, None, None):
-            TestIntegration_progress._keep_files = True
+        # Set the job size parameters
+        cls._num_node = 1
+        num_rank = int((cls._machine.num_core() - cls._machine.num_package() * 2)/ 8)
 
-    def test_load_report(self):
-        """Test that the report can be loaded
+        app_conf = AppConf()
 
-        """
-        report = geopmpy.io.RawReport(self._report_path)
+        trace_signals = 'REGION_PROGRESS@cpu'
+        agent_conf = geopmpy.io.AgentConf(cls._test_name + '_agent.config')
+
+        # Create the test launcher with the above configuration
+        launcher = geopm_test_launcher.TestLauncher(app_conf=app_conf,
+                                                    agent_conf=agent_conf,
+                                                    report_path=cls._report_path,
+                                                    trace_path=cls._trace_path,
+                                                    trace_signals=trace_signals)
+        launcher.set_num_node(cls._num_node)
+        launcher.set_num_rank(num_rank)
+        # Run the test application
+        launcher.run(cls._test_name)
+
+        # Output to be reused by all tests
+        cls._report = geopmpy.io.RawReport(cls._report_path)
+        cls._trace = geopmpy.io.AppOutput(cls._trace_path + '*')
+
+    def test_progress(self):
+        host_names = self._report.host_names()
+        self.assertEqual(len(host_names), self._num_node)
 
 if __name__ == '__main__':
-    # Call do_launch to clear non-pyunit command line option
-    util.do_launch()
     unittest.main()
