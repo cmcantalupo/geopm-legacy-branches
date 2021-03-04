@@ -167,6 +167,12 @@ GTEST_TESTS = test/gtest_links/AcceleratorTopoTest.default_config \
               test/gtest_links/DifferenceSignalTest.read \
               test/gtest_links/DifferenceSignalTest.read_batch \
               test/gtest_links/DifferenceSignalTest.setup_batch \
+              test/gtest_links/DivisionSignalTest.errors \
+              test/gtest_links/DivisionSignalTest.read \
+              test/gtest_links/DivisionSignalTest.read_div_by_zero \
+              test/gtest_links/DivisionSignalTest.read_batch \
+              test/gtest_links/DivisionSignalTest.read_batch_div_by_zero \
+              test/gtest_links/DivisionSignalTest.setup_batch \
               test/gtest_links/DomainControlTest.errors \
               test/gtest_links/DomainControlTest.save_restore \
               test/gtest_links/DomainControlTest.setup_batch \
@@ -297,6 +303,7 @@ GTEST_TESTS = test/gtest_links/AcceleratorTopoTest.default_config \
               test/gtest_links/MSRIOGroupTest.read_signal_energy \
               test/gtest_links/MSRIOGroupTest.read_signal_frequency \
               test/gtest_links/MSRIOGroupTest.read_signal_power \
+              test/gtest_links/MSRIOGroupTest.read_signal_scalability \
               test/gtest_links/MSRIOGroupTest.read_signal_temperature \
               test/gtest_links/MSRIOGroupTest.sample \
               test/gtest_links/MSRIOGroupTest.sample_raw \
@@ -448,6 +455,15 @@ GTEST_TESTS = test/gtest_links/AcceleratorTopoTest.default_config \
               test/gtest_links/ReporterTest.generate \
               test/gtest_links/SampleAggregatorTest.epoch_application_total \
               test/gtest_links/SampleAggregatorTest.sample_application \
+              test/gtest_links/ScalabilityRegionSignalTest.errors \
+              test/gtest_links/ScalabilityRegionSignalTest.read \
+              test/gtest_links/ScalabilityRegionSignalTest.read_nan \
+              test/gtest_links/ScalabilityRegionSignalTest.read_batch \
+              test/gtest_links/ScalabilityRegionSignalTest.read_batch_nan \
+              test/gtest_links/ScalabilityRegionSignalTest.read_batch_lower_boundary \
+              test/gtest_links/ScalabilityRegionSignalTest.read_batch_upper_boundary \
+              test/gtest_links/ScalabilityRegionSignalTest.read_batch_repeat \
+              test/gtest_links/ScalabilityRegionSignalTest.setup_batch \
               test/gtest_links/SchedTest.test_proc_cpuset_0 \
               test/gtest_links/SchedTest.test_proc_cpuset_1 \
               test/gtest_links/SchedTest.test_proc_cpuset_2 \
@@ -585,6 +601,7 @@ test_geopm_test_SOURCES = test/AcceleratorTopoTest.cpp \
                           test/DebugIOGroupTest.cpp \
                           test/DerivativeSignalTest.cpp \
                           test/DifferenceSignalTest.cpp \
+                          test/DivisionSignalTest.cpp \
                           test/DomainControlTest.cpp \
                           test/EditDistEpochRecordFilterTest.cpp \
                           test/EditDistPeriodicityDetectorTest.cpp \
@@ -660,6 +677,7 @@ test_geopm_test_SOURCES = test/AcceleratorTopoTest.cpp \
                           test/RecordFilterTest.cpp \
                           test/ReporterTest.cpp \
                           test/SampleAggregatorTest.cpp \
+                          test/ScalabilityRegionSignalTest.cpp \
                           test/SchedTest.cpp \
                           test/SharedMemoryTest.cpp \
                           test/TimeIOGroupTest.cpp \
