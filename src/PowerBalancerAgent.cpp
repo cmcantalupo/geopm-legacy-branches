@@ -193,6 +193,7 @@ namespace geopm
                 m_platform_io.push_control("POWER_PACKAGE_LIMIT",
                                            GEOPM_DOMAIN_PACKAGE, pkg_idx);
         }
+        m_sample_agg->period_duration(6);
     }
 
    void PowerBalancerAgent::LeafRole::are_steps_complete(bool is_complete)
@@ -543,16 +544,16 @@ namespace geopm
     {
         for (int pkg_idx = 0; pkg_idx < role.m_num_domain; ++pkg_idx) {
             auto &package = role.m_package[pkg_idx];
-            int epoch_count = role.m_platform_io.sample(role.m_count_pio_idx[pkg_idx]);
+            int epoch_count = role.m_sample_agg->get_period();
             if (epoch_count > 1 &&
                 epoch_count != package.last_epoch_count &&
                 !package.is_step_complete) {
                 /// We wish to measure runtime that is a function of node
                 /// local optimizations only, and therefore uncorrelated
                 /// between compute nodes.
-                double total = role.m_sample_agg->sample_epoch_last(role.m_time_agg_idx[pkg_idx]);
-                double network = role.m_sample_agg->sample_epoch_last(role.m_network_agg_idx[pkg_idx]);
-                double ignore = role.m_sample_agg->sample_epoch_last(role.m_ignore_agg_idx[pkg_idx]);
+                double total = role.m_sample_agg->sample_period_last(role.m_time_agg_idx[pkg_idx]);
+                double network = role.m_sample_agg->sample_period_last(role.m_network_agg_idx[pkg_idx]);
+                double ignore = role.m_sample_agg->sample_period_last(role.m_ignore_agg_idx[pkg_idx]);
                 double balanced_epoch_runtime =  total - network - ignore;
                 auto &balancer = role.m_power_balancer[pkg_idx];
                 package.is_step_complete = balancer->is_runtime_stable(balanced_epoch_runtime);
@@ -582,20 +583,20 @@ namespace geopm
     void PowerBalancerAgent::ReduceLimitStep::sample_platform(PowerBalancerAgent::LeafRole &role) const
     {
         for (int pkg_idx = 0; pkg_idx != role.m_num_domain; ++pkg_idx) {
-            int epoch_count = role.m_platform_io.sample(role.m_count_pio_idx[pkg_idx]);
+            int epoch_count = role.m_sample_agg->get_period();
             // If all of the ranks have observed a new epoch then update
             // the power_balancer.
             auto &package = role.m_package[pkg_idx];
             auto &balancer = role.m_power_balancer[pkg_idx];
-            if (epoch_count > 1 &&
+            if (epoch_count > 5 &&
                 epoch_count != package.last_epoch_count &&
                 !package.is_step_complete) {
                 /// We wish to measure runtime that is a function of
                 /// node local optimizations only, and therefore
                 /// uncorrelated between compute nodes.
-                double total = role.m_sample_agg->sample_epoch_last(role.m_time_agg_idx[pkg_idx]);
-                double network = role.m_sample_agg->sample_epoch_last(role.m_network_agg_idx[pkg_idx]);
-                double ignore = role.m_sample_agg->sample_epoch_last(role.m_ignore_agg_idx[pkg_idx]);
+                double total = role.m_sample_agg->sample_period_last(role.m_time_agg_idx[pkg_idx]);
+                double network = role.m_sample_agg->sample_period_last(role.m_network_agg_idx[pkg_idx]);
+                double ignore = role.m_sample_agg->sample_period_last(role.m_ignore_agg_idx[pkg_idx]);
                 double balanced_epoch_runtime =  total - network - ignore;
                 package.is_step_complete = package.is_out_of_bounds ||
                                            balancer->is_target_met(balanced_epoch_runtime);
