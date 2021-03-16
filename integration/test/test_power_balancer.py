@@ -88,7 +88,7 @@ class TestIntegration_power_balancer(unittest.TestCase):
         geopmpy.error.exc_clear()
 
         if not cls._skip_launch:
-            report_signals='TIME@package,TIME_HINT_NETWORK@package'
+            report_signals='TIME@package,TIME_HINT_NETWORK@package,MSR::PPERF:PCNT_REGION_HINT_COMPUTE@package,MSR::PPERF:PCNT_REGION_HINT_MEMORY@package,MSR::PPERF:PCNT_REGION_HINT_IGNORE@package'
             trace_signals='MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT@package'
             loop_count = 500
             fam, mod = geopm_test_launcher.get_platform()
