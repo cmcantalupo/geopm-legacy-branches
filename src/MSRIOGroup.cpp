@@ -112,6 +112,7 @@ namespace geopm
         register_signal_alias("FREQUENCY", "MSR::PERF_STATUS:FREQ"); // TODO: Remove @ v2.0
         register_signal_alias("CPU_FREQUENCY_STATUS", "MSR::PERF_STATUS:FREQ");
         register_signal_alias("CPU_FREQUENCY_CONTROL", "MSR::PERF_CTL:FREQ");
+        register_signal_alias("CPU_FREQUENCY", "MSR::APERF:ACNT_RATE");
 
         std::string max_turbo_name;
         switch (m_cpuid) {
