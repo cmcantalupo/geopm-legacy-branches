@@ -106,7 +106,6 @@ namespace geopm
         , m_policy_path(policy_path)
         , m_do_endpoint(do_endpoint)
         , m_rank(rank)
-        , m_sticker_freq(m_platform_io.read_signal("CPUINFO::FREQ_STICKER", GEOPM_DOMAIN_BOARD, 0))
         , m_epoch_count_idx(-1)
     {
         GEOPM_DEBUG_ASSERT(m_sample_agg != nullptr, "m_sample_agg cannot be null");
@@ -340,13 +339,6 @@ namespace geopm
             double denom = m_sample_agg->sample_region(m_sync_signal_idx[sig[1]], hash);
             return denom == 0 ? 0.0 : 100.0 * numer / denom;
         };
-        auto divide_sticker_scale = [this](uint64_t hash, const std::vector<std::string> &sig) -> double
-        {
-            GEOPM_DEBUG_ASSERT(sig.size() == 2, "Wrong number of signals for divide_sticker_scale()");
-            double numer = m_sample_agg->sample_region(m_sync_signal_idx[sig[0]], hash);
-            double denom = m_sample_agg->sample_region(m_sync_signal_idx[sig[1]], hash);
-            return denom == 0 ? 0.0 : m_sticker_freq * numer / denom;
-        };
 
         m_sync_fields = {
             {"sync-runtime (s)", {"TIME"}, sample_only},
@@ -354,7 +346,7 @@ namespace geopm
             {"dram-energy (J)", {"ENERGY_DRAM"}, sample_only},
             {"power (W)", {"ENERGY_PACKAGE", "TIME"}, divide},
             {"frequency (%)", {"CYCLES_THREAD", "CYCLES_REFERENCE"}, divide_pct},
-            {"frequency (Hz)", {"CYCLES_THREAD", "CYCLES_REFERENCE"}, divide_sticker_scale},
+            {"frequency (Hz)", {"CPU_FREQUENCY"}, sample_only},
             {"time-hint-network (s)", {"TIME_HINT_NETWORK"}, sample_only},
             {"time-hint-ignore (s)", {"TIME_HINT_IGNORE"}, sample_only},
             {"time-hint-compute (s)", {"TIME_HINT_COMPUTE"}, sample_only},
