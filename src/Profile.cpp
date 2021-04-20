@@ -548,6 +548,17 @@ namespace geopm
         }
     }
 
+    void ProfileImp::per_thread_init(int cpu, uint32_t num_work_unit)
+    {
+        // Ignore calls with num_work_unit set to 1: work cannot be
+        // shared between threads.
+        if (!m_is_enabled || num_work_unit <= 1) {
+            return;
+        }
+
+        m_app_status->set_total_work_units(cpu, num_work_unit);
+    }
+
     void ProfileImp::thread_post(int cpu)
     {
         if (!m_is_enabled) {

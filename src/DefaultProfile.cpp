@@ -195,6 +195,22 @@ extern "C"
         return err;
     }
 
+    int geopm_tprof_thread_init(uint32_t num_work_unit)
+    {
+        int err = 0;
+        // All threads call through to per_thread_init()
+        if (g_pmpi_prof_enabled) {
+            try {
+                int cpu = geopm::Profile::get_cpu();
+                geopm::Profile::default_profile().per_thread_init(cpu, num_work_unit);
+            }
+            catch (...) {
+                err = geopm::exception_handler(std::current_exception());
+            }
+        }
+        return err;
+    }
+
     int geopm_tprof_post(void)
     {
         int err = 0;
