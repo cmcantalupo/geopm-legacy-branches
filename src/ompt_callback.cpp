@@ -89,7 +89,8 @@ extern "C"
             ompt_set_callback_t ompt_set_callback = (ompt_set_callback_t) lookup("ompt_set_callback");
             ompt_set_callback(ompt_callback_parallel_begin, (ompt_callback_t) &on_ompt_event_parallel_begin);
             ompt_set_callback(ompt_callback_parallel_end, (ompt_callback_t) &on_ompt_event_parallel_end);
-            ompt_set_callback(ompt_callback_work, (ompt_callback_t) &on_ompt_event_work);
+            // Do not enable work callback in order to avoid race when geopm_tprof_thread_init is called
+            // ompt_set_callback(ompt_callback_work, (ompt_callback_t) &on_ompt_event_work);
         }
         // OpenMP 5.0 standard says return non-zero on success!?!?!
         return 1;
