@@ -13,6 +13,63 @@ provide a form of tutorial for an end user learning how to interact
 with the GEOPM service.
 
 
+Build install and run
+---------------------
+
+The script below walks through the steps to test the GEOPM service on a
+compute node on a SLURM development cluster.  The example includes creating an
+allocation on a compute node on an ICX partition and running commands in a
+sudo shell on the compute node.  These two new shells are donoted by
+indentation in the script.
+
+    # Get acccess to GEOPM_SOURCE environment variable
+    source ~/.geopmrc
+
+    # Make sure we compile libgeopmd.so with system compiler
+    unset CC CXX
+
+    # Checkout the geopm-service-sst-test branch
+    cd $GEOPM_SOURCE
+    git checkout geopm-service-sst-test
+
+    # Get rid of all non-git files
+    echo Warning: CLEANING EVERYTHING 1>&2
+    sleep 1
+    git clean -dfx
+
+    # Create the GEOPM service RPMs in ~/rpmbuild/RPMS
+    cd service
+    ./autogen.sh
+    ./configure
+    make rpm
+
+    # Create an allocation on an ICX node
+    salloc -n1 -p icx
+
+        # Within the shell on the compute node sudo into a root shell
+        cd $GEOPM_SOURCE/service/test
+        HOME_USER=${USER} sudo --preserve-env=HOME_USER su
+
+            # Within the sudo shell load the msr module
+            modprobe msr
+
+            # Install the GEOPM service RPMs and start the service
+            ./install_service.sh $(cat ../VERSION) ${HOME_USER}
+
+            # Update the allowed lists to open all signals and controls to all users
+            geopmaccess -a | geopmaccess -w
+            geopmaccess -ac | geopmaccess -wc
+
+            # Get out of the sudo shell
+            exit
+
+        # On the compute node check the sst priority
+        ./test_sst_priority.sh
+
+        # Exit from the compute node allocation
+        exit
+
+
 Where to find other tests
 -------------------------
 
