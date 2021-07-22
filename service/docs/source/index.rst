@@ -11,6 +11,8 @@ GEOPM Service Documentation
    build
    admin
    client
+   signals
+   controls
    runtime
    analysis
    reference
