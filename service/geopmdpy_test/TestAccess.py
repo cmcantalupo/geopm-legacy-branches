@@ -37,9 +37,7 @@ from unittest import TestCase
 from unittest import main
 from mock import create_autospec
 
-# Patch dlopen to allow the tests to run when there is no build
-with mock.patch('cffi.FFI.dlopen', return_value=mock.MagicMock()):
-    from geopmdpy.access import Access
+from geopmdpy.access import Access
 
 class TestAccess(TestCase):
     def setUp(self):
