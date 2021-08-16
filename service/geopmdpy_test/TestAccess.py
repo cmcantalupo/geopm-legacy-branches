@@ -43,28 +43,79 @@ class TestAccess(TestCase):
     def setUp(self):
         self._geopm_proxy = mock.MagicMock()
         self._access = Access(self._geopm_proxy)
+        self._signals_expect = ['TIME',
+                                'ALL_ACCESS',
+                                'SIGNAL']
+        self._controls_expect = ['MAX_LIMIT',
+                                 'WRITABLE',
+                                 'CONTROL']
 
-    def test_default_run(self):
-        """Test default inputs to run()
+    def test_default_signals_query(self):
+        """Test default signal access list query
 
-        Test that the run method of Access when called with default
-        arguments prints default access list.
+        Test the run() method equivalent to 'geopmaccess'
 
         """
-        signals_expect = ['TIME',
-                          'ALL_ACCESS',
-                          'SIGNAL']
-        controls_expect = ['MAX_LIMIT',
-                           'WRITABLE',
-                           'CONTROL']
-        return_value = (signals_expect,
-                        controls_expect)
+        return_value = (self._signals_expect,
+                        self._controls_expect)
         self._geopm_proxy.PlatformGetGroupAccess = mock.Mock(return_value=return_value)
         actual_result = self._access.run(False, False, False, '')
         self._geopm_proxy.PlatformGetGroupAccess.assert_called_with('')
-        expected_result = '\n'.join(signals_expect)
+        expected_result = '\n'.join(self._signals_expect)
         self.assertEqual(expected_result, actual_result)
 
+    def test_default_controls_query(self):
+        """Test default control access list query
+
+        Test the run() method equivalent to 'geopmaccess -c'
+
+        """
+        return_value = (self._signals_expect,
+                        self._controls_expect)
+        self._geopm_proxy.PlatformGetGroupAccess = mock.Mock(return_value=return_value)
+        actual_result = self._access.run(False, False, True, '')
+        self._geopm_proxy.PlatformGetGroupAccess.assert_called_with('')
+        expected_result = '\n'.join(self._controls_expect)
+        self.assertEqual(expected_result, actual_result)
+
+    def test_group_signals_query(self):
+        """Test group signal access list query
+
+        Test the run() method equivalent to 'geopmaccess -g test'
+        """
+        return_value = (self._signals_expect,
+                        self._controls_expect)
+        self._geopm_proxy.PlatformGetGroupAccess = mock.Mock(return_value=return_value)
+        actual_result = self._access.run(False, False, False, 'test')
+        self._geopm_proxy.PlatformGetGroupAccess.assert_called_with('test')
+        expected_result = '\n'.join(self._signals_expect)
+        self.assertEqual(expected_result, actual_result)
+
+    def test_group_controls_query(self):
+        """Test group signal access list query
+
+        Test the run() method equivalent to 'geopmaccess -c -g test'
+        """
+        return_value = (self._signals_expect,
+                        self._controls_expect)
+        self._geopm_proxy.PlatformGetGroupAccess = mock.Mock(return_value=return_value)
+        actual_result = self._access.run(False, False, True, 'test')
+        self._geopm_proxy.PlatformGetGroupAccess.assert_called_with('test')
+        expected_result = '\n'.join(self._controls_expect)
+        self.assertEqual(expected_result, actual_result)
+
+    def test_all_signals_query(self):
+        """Test all available signal query
+
+        Test the run() method equivalent to 'geopmaccess -a'
+        """
+        return_value = (self._signals_expect,
+                        self._controls_expect)
+        self._geopm_proxy.PlatformGetAllAccess = mock.Mock(return_value=return_value)
+        actual_result = self._access.run(False, True, False, '')
+        self._geopm_proxy.PlatformGetAllAccess.assert_called()
+        expected_result = '\n'.join(self._signals_expect)
+        self.assertEqual(expected_result, actual_result)
 
 if __name__ == '__main__':
     main()

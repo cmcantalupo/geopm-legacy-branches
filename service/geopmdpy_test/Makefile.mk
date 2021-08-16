@@ -85,6 +85,11 @@ GEOPMDPY_TESTS = geopmdpy_test/pytest_links/TestDBusXML.test_xml_parse_no_doc \
                  geopmdpy_test/pytest_links/TestTopo.test_domain_domain_nested \
                  geopmdpy_test/pytest_links/TestTopo.test_domain_name_type \
                  geopmdpy_test/pytest_links/TestAccess.test_default_run \
+                 geopmdpy_test/pytest_links/TestAccess.test_default_signals_query \
+                 geopmdpy_test/pytest_links/TestAccess.test_default_controls_query \
+                 geopmdpy_test/pytest_links/TestAccess.test_group_signals_query \
+                 geopmdpy_test/pytest_links/TestAccess.test_group_controls_query \
+                 geopmdpy_test/pytest_links/TestAccess.test_all_signals_query \
                  # end
 
 TESTS = $(GEOPMDPY_TESTS)
