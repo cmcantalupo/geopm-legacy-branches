@@ -146,6 +146,7 @@ libgeopmd_la_SOURCES = contrib/json11/json11.cpp \
                        src/PluginFactory.hpp \
                        src/RawMSRSignal.cpp \
                        src/RawMSRSignal.hpp \
+                       src/SDBus.hpp \
                        src/SharedMemory.cpp \
                        src/SharedMemory.hpp \
                        src/SharedMemoryImp.hpp \
