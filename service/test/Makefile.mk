@@ -286,6 +286,7 @@ TESTS += $(GTEST_TESTS) \
          # end
 
 EXTRA_DIST += test/legacy_allowlist.out \
+              test/geopm_test.sh \
               # end
 
 test_geopm_test_SOURCES = test/AcceleratorTopoNullTest.cpp \
