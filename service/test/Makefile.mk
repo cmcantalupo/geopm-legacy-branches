@@ -163,9 +163,6 @@ GTEST_TESTS = test/gtest_links/AcceleratorTopoNullTest.default_config \
               test/gtest_links/MSRFieldSignalTest.real_counter \
               test/gtest_links/MSRFieldSignalTest.setup_batch \
               test/gtest_links/MSRFieldSignalTest.errors \
-              test/gtest_links/ModelApplicationTest.parse_config_errors \
-              test/gtest_links/MonitorAgentTest.policy_names \
-              test/gtest_links/MonitorAgentTest.sample_names \
               test/gtest_links/NVMLAcceleratorTopoTest.hpe_sx40_default_config \
               test/gtest_links/NVMLAcceleratorTopoTest.no_gpu_config \
               test/gtest_links/NVMLAcceleratorTopoTest.mutex_affinitization_config \
