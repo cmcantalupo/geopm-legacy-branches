@@ -34,16 +34,44 @@
 #include <string>
 
 #include "geopm/Exception.hpp"
+#include "NVMLDevicePool.hpp"
 
 namespace geopm
 {
-    class NVMLDevicePool;
+    class NVMLDevicePoolNull : public NVMLDevicePool
+    {
+        public:
+            NVMLDevicePoolNull() = default;
+            ~NVMLDevicePoolNull() = default;
+            virtual int num_accelerator(void) const override {return -1;}
+            virtual cpu_set_t *cpu_affinity_ideal_mask(int accel_idx) const override {return nullptr;}
+            virtual uint64_t frequency_status_sm(int accel_idx) const override {return 0;}
+            virtual uint64_t utilization(int accel_idx) const override {return 0;}
+            virtual uint64_t power(int accel_idx) const override {return 0;}
+            virtual uint64_t power_limit(int accel_idx) const override {return 0;}
+            virtual uint64_t frequency_status_mem(int accel_idx) const override {return 0;}
+            virtual uint64_t throttle_reasons(int accel_idx) const override {return 0;}
+            virtual uint64_t temperature(int accel_idx) const override {return 0;}
+            virtual uint64_t energy(int accel_idx) const override {return 0;}
+            virtual uint64_t performance_state(int accel_idx) const override {return 0;}
+            virtual uint64_t throughput_rx_pcie(int accel_idx) const override {return 0;}
+            virtual uint64_t throughput_tx_pcie(int accel_idx) const override {return 0;}
+            virtual uint64_t utilization_mem(int accel_idx) const override {return 0;}
+            virtual std::vector<int> active_process_list(int accel_idx) const override {std::vector<int> result; return result;}
+
+            virtual void frequency_control_sm(int accel_idx, int min_freq, int max_freq) const override {}
+            virtual void frequency_reset_control(int accel_idx) const override {}
+            virtual void power_control(int accel_idx, int setting) const override {}
+
+    };
 
     const NVMLDevicePool &nvml_device_pool(const int num_cpu)
     {
         throw Exception("NVMLDevicePoolThrow::" + std::string(__func__) +
                         ": GEOPM configured without nvml library support.  Please configure with --enable-nvml",
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        static NVMLDevicePoolNull instance;
+        return instance;
     }
 
 }
