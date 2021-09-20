@@ -30,5 +30,5 @@
 #
 
 EXTRA_DIST += integration/test/test_tutorial_base.py \
-              integration/test/test_tutorial_base.sh \
+              integration/test/test_tutorial_base.sh.in \
               # end

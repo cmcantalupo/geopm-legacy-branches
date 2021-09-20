@@ -558,6 +558,7 @@ AC_DEFINE_UNQUOTED([GEOPM_SOURCE_DIR], ["$GEOPM_SOURCE_DIR"], [Root of the GEOPM
 AC_CONFIG_FILES([Makefile specs/geopm.spec specs/geopm-dudley.spec specs/geopm-ohpc.spec specs/geopm-theta.spec scripts/geopmpy/version.py])
 AC_CONFIG_FILES([test/geopm_test.sh], [chmod a+x test/geopm_test.sh])
 AC_CONFIG_FILES([scripts/test/geopmpy_test.sh], [chmod a+x scripts/test/geopmpy_test.sh])
+AC_CONFIG_FILES([integration/test/test_tutorial_base.sh], [chmod a+x integration/test/test_tutorial_base.sh])
 AC_OUTPUT
 
 CC_VERSION=$(${CC} --version | head -n1)

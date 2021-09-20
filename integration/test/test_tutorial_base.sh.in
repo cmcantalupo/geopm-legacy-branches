@@ -38,13 +38,13 @@
 #
 
 set -e
-export SRC_BASE_DIR=$(dirname $(dirname $(dirname $(realpath $0))))
-export LINK_DIR=$SRC_BASE_DIR/integration/test/test_tutorial_base
+export BUILD_ROOT=@abs_builddir@
+export LINK_DIR=$BUILD_ROOT/integration/test/test_tutorial_base
 
 function get_config
 {
     # Extract variable value out of the config.log
-    grep "^$1=" $SRC_BASE_DIR/config.log | sed "s|$1='\(.*\)'|\1|"
+    grep "^$1=" $BUILD_ROOT/config.log | sed "s|$1='\(.*\)'|\1|"
 }
 
 # Determine the compiler
@@ -72,13 +72,13 @@ ln -s $temp_dir $LINK_DIR
 unset GEOPM_INSTALL GEOPM_LAUNCHER GEOPM_BIN GEOPM_INC GEOPM_LIB GEOPM_CFLAGS GEOPM_LDFLAGS
 destdir=$temp_dir/build
 prefix=$(get_config prefix)
-cd $SRC_BASE_DIR
+cd $BUILD_ROOT
 DESTDIR=$destdir make install
 make dist
 
 # Build the tutorials
 cd -P $LINK_DIR
-tar xvf $SRC_BASE_DIR/geopm-tutorial.tar.gz
+tar xvf $BUILD_ROOT/geopm-tutorial.tar.gz
 cd geopm-tutorial
 export GEOPM_INSTALL=$destdir/$prefix
 ./tutorial_build_$compiler.sh
