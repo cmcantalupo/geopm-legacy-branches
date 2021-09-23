@@ -71,7 +71,7 @@
         - [ ] All dependency classes have already been merged
         - [ ] All public methods have doxygen comments describing
               behavior, inputs, outputs and exceptions raised
-        - [ ] Implementation file has `#include config.h`
+        - [ ] Implementation file has `#include "config.h"`
 
       </details>
 
