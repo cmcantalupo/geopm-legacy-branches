@@ -45,6 +45,8 @@
 
     + <details> <summary>New external dependency</summary>
 
+        - [ ] Use of interface exposed by external dependency is
+              compatible with the BSD 3 clause license
         - [ ] Shared object dependencies have been added to the build
               system in this or a prior PR
         - [ ] Dependency has one or more last-level-abstraction classes
