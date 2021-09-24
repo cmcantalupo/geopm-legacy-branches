@@ -20,6 +20,13 @@
 
       </details>
 
+    + <details> <summary>Testing improvement</summary>
+
+        - Concise description of the improvements to the unit or
+          integration testing
+
+      </details>
+
     + <details> <summary>New methods added to a C++ class</summary>
 
         - [ ] Unit tests added for new class methods except: non-test
