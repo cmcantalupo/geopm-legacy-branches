@@ -9,9 +9,10 @@ assignees: ''
 > estimate 1
 Parent story: #XXXX
 
+[Concise description of the improvements to the unit or integration
+testing]
+
 Done criteria:
 
-- Concise description of the improvements to the unit or integration
-  testing
 - [ ] [...]
 - [ ] [...]
