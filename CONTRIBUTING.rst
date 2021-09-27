@@ -98,7 +98,8 @@ is as follows:
 
 #.
    An issue has been created about the problem that the pull request
-   is solving.
+   is solving.  Note that most PRs that change source code refer to
+   an issue created with one of the "Task - " templates.
 
 #.
    Author creates a branch reflecting the issue number,
@@ -118,12 +119,8 @@ is as follows:
    may be helpful when editing the pull request text.
 
 #.
-   The author will edit the pull request template to include only one
-   of the ``<details>`` sections.  Each section applies to a category
-   of change.  Select the category that best fits the change you are
-   making and delete all other details sections from the template.
-   Make sure all check boxes are marked and all bracketed text is
-   filled in for what remains of the template.
+   Check that all of the requirements in the issue referenced by the
+   PR have been met.
 
 #.
    The submitter may optionally request specific people to be
