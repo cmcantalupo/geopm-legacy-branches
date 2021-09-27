@@ -67,6 +67,15 @@ message is appreciated, but not required.  All pull requests to the
 geopm/geopm repository on GitHub will automatically be submitted to
 GitHub Actions for unit testing.
 
+If the pull request you are submitting does not close an existing
+github issue, please open a new issue prior to submitting a pull
+request.  The issue referenced by a pull request should document the
+requirements for the pull request.
+
+The link for creating an issue is here:
+
+https://github.com/geopm/geopm/issues/new/choose
+
 The link for creating a pull request is here:
 
 https://github.com/geopm/geopm/pulls
