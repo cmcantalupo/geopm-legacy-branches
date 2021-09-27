@@ -11,7 +11,7 @@ Bug Report
 
 Please file an issue on our GitHub site for any bug observed:
 
-https://github.com/geopm/geopm/issues
+https://github.com/geopm/geopm/issues/new/choose
 
 and select the "Bug report" template.
 
