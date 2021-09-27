@@ -1,6 +1,6 @@
 ---
-name: Task
-about: Step in solving a story
+name: Task - [Empty template]
+about: Step in solving a story (other task templates preferred)
 title: ''
 labels: task
 assignees: ''
@@ -10,6 +10,5 @@ assignees: ''
 Parent story: #XXXX
 
 Done criteria:
-
 - [...]
 - [...]
