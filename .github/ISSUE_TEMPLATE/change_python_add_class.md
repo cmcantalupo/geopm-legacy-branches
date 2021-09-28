@@ -20,5 +20,7 @@ Done criteria:
       behavior, inputs, outputs and exceptions raised
 - [ ] Isolate external dependencies in wrapping classes or modules if
       doing so enables better testing.
+- [ ] The new class is fully compliant with Python 3.  Python 2 is not
+      supported.
 - [ ] [...]
 - [ ] [...]

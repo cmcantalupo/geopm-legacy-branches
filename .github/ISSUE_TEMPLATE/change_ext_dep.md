@@ -21,5 +21,11 @@ Done criteria:
       if this enables testing
 - [ ] All existing features continue to work when dependency is not
       available
+- [ ] If an external python module dependency was introduced, the new
+      module is added to the requirements.txt and is available via PyPI
+      (pip).
+- [ ] Any external package required by geopmdpy for functionality of
+      the GEOPM service must be provided by RPM or debian packaging from
+      standard Linux distros.
 - [ ] [...]
 - [ ] [...]
