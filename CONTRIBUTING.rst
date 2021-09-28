@@ -26,13 +26,6 @@ the command
    geopmread --version
 
 
-or
-
-.. code-block::
-
-   geopmagent --version
-
-
 Providing code that is small and reproduces the issue is nice to have.
 
 
