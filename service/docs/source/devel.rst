@@ -5,52 +5,109 @@ Guide for GEOPM Developers
 These are instructions for a developer that would like to modify the
 source code in the GEOPM repository.
 
+Source Builds
+-------------
+
+The GEOPM repository is comprised of 2 directories that must be built
+independently: the base directory (i.e. the root of the repository after
+issuing ``git clone``) and the ``service/`` directory.  The service directory
+must be built first as the base directory build depends on libraries created in
+the service directory.
+
+Within the GEOPM repository, a build script has been provided to automate the
+build sequence and ensure the right configure time options are specified.  The
+``build.sh`` script is located in the root of the repository.
+
+In order to invoke the build script, the following environment variables must
+be set: ``GEOPM_SOURCE`` and ``GEOPM_INSTALL``.  Ideally this is done with the
+``~/.geopmrc`` file.  See `integration/README <../../../integration/README.md>`_
+for information on how to create ``~/.geopmrc``.
+
+By default, the build script will attempt to install the build into the
+directory pointed to by ``GEOPM_INSTALL``.  This can be bypassed by setting
+``GEOPM_SKIP_INSTALL``. Also by default, the unit tests will not run.  The unit
+tests will run if ``GEOPM_RUN_TESTS`` is set.  More information on running the
+unit tests is discussed in the next section.  For the full list of environment
+variable available to the build script along with usage examples, issue:
+``./build.sh --help``.
+
+    TODO Spell out raw configure and make commands as well for users who don't want to
+    use the build script.
 
 Test Instructions
 -----------------
 
-To launch the GEOPM unit tests, run the following command in the geopm
-build directory after running configure:
+Similar to the build process, the 2 directories contained within the repository
+have separate ``make check`` targets, and must be executed separately.  For the
+ease of running the tests, this process has been integrated into the build
+script.
+
+To launch the GEOPM unit tests via the build script, run the following command
+in the root of the GEOPM repository:
 
 .. code-block::
 
-   make check
+    GEOPM_RUN_TESTS=yes ./build.sh
 
 
-Please run these tests before submitting a change request.  You can
+The script will first build the service directory, then build the unit tests,
+then run the unit tests all for the code contained within the service
+directory.  If there were no errors, the script will continue on to build the
+base directory, then build the unit tests, then run the unit tests for code
+contained with the ``<REPO_ROOT>/src`` directory.  If there were no errors, the
+script will exit back to the command prompt with a return code of 0.
+
+To run just the service directory or root directory tests in isloation, one can
+issue ``make check`` from the desired directory (i.e. service or root).
+
+    TODO Information about interrogating gtest_links logs and similar.
+    TODO Python requirements as related to unit test.
+
+Please run these tests before submitting a pull request.  You can
 build and run unit tests on a standalone computer (such as a laptop) by
-configuring without MPI as follows:
+configuring without MPI or Fortran as follows:
 
 .. code-block::
 
-   ./configure --disable-mpi
-   make
-   make check
+    source ${GEOPM_SOURCE}/integration/config/gnu_env.sh
+    GEOPM_SKIP_COMPILER_CHECK=yes GEOPM_BASE_CONFIG_OPTIONS="--disable-mpi --disable-fortran" GEOPM_RUN_TESTS=yes ./build.sh
 
 
-The integration tests require a system with MPI and multiple compute nodes.
+The build script is setup to stop if an error is encountered during ``make`` or ``make check``.
+
+    TODO The integration tests require a system with MPI and multiple compute nodes.
+    Lots more information needed here.
 
 Coverage Instructions
 ---------------------
 
 To generate a coverage report, first be sure that you have installed
-the lcov package available here:
+the lcov package.  Note that if you are using GCC 9 or above, you must use lcov v1.15 or later to work around `this issue <https://github.com/linux-test-project/lcov/issues/58>`_.
 
-http://ltp.sourceforge.net/coverage/lcov.php
+The lcov source is available here:
 
-The GEOPM build must be configured with the "--enable-coverage" option.  Then
-simply run
+`https://github.com/linux-test-project/lcov/`
+
+The GEOPM build must be configured with the "--enable-coverage" option.  This can be accomplished with:
+
+.. code-block::
+
+    source ${GEOPM_INSTALL}/integration/config/gnu_env.sh
+    GEOPM_SKIP_COMPILER_CHECK=yes GEOPM_SKIP_INSTALL=yes GEOPM_GLOBAL_CONFIG_OPTIONS="--enable-coverage" ./build.sh
+
+
+Then in either the service directory or the root directory, simply run
 
 .. code-block::
 
    make coverage
 
 
-which runs tests and produce a coverage report in
+which runs the corresponding unit tests and produces a coverage report in
 
 .. code-block::
 
-   coverage/index.html
+   ./coverage/index.html
 
 
 Note that all tests must pass in order to generate a coverage report.
