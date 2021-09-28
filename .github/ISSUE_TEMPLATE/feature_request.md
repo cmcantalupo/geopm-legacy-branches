@@ -19,3 +19,14 @@ features you've considered.
 
 **Additional context**
 Add any other context for the feature request here.
+
+_Note_:
+
+Prior to creating a feature request, please see the documentation at
+either of the following links:
+
+https://github.com/geopm/geopm/blob/dev/CONTRIBUTING.rst#feature-request
+
+https://geopm.github.io/geopmdpy/contrib.html#feature-request
+
+about the process of developing a GEOPM feature.

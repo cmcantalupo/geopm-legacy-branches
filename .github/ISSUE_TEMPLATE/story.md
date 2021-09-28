@@ -17,3 +17,9 @@ A clear and concise description of any alternative solutions or features you've 
 
 **Additional context**
 Add any other context about the story here.
+
+_Note_:
+
+This template is primarily used by the GEOPM maintainers for sprint
+planning.  Planning is done using the github Milestones for the GEOPM
+repository.
