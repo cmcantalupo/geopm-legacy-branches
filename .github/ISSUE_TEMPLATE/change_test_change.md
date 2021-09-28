@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 > estimate 1
-Parent story: #XXXX
+Parent [feature/story]: #XXXX
 
 [Concise description of the improvements to the unit or integration
 testing]

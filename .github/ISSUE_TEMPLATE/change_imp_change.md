@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 > estimate 1
-Parent story: #XXXX
+Parent [feature/story]: #XXXX
 
 The implementation for the [...] feature was modified because [...].
 

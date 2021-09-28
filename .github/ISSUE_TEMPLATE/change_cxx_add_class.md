@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 > estimate 1
-Parent story: #XXXX
+Parent [feature/story]: #XXXX
 
 Introduce new C++ class [...] with the following features:
 - [...]

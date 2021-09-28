@@ -6,6 +6,11 @@ labels: ''
 assignees: ''
 
 ---
+> estimate 0
+Fixes #XXXX, a bug report from github issues.
+
+Concise description of the fix.
+
 Done criteria:
 
 - [ ] Details about the bug are located in the above bug report

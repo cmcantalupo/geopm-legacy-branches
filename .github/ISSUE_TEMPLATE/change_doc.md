@@ -6,8 +6,8 @@ labels: task,doc
 assignees: ''
 
 ---
-> estimage 1
-Parent story: #XXXX
+> estimate 1
+Parent [feature/story]: #XXXX
 
 - The modification is to [developer/user] documentation
 - The change is a [correction/deletion/addition]
