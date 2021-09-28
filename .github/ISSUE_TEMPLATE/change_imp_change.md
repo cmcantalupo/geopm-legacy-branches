@@ -1,5 +1,5 @@
 ---
-name: Task - Change an existing implemenation
+name: Change - Change an existing implemenation
 about: Change implementation for existing feature
 title: ''
 labels: task

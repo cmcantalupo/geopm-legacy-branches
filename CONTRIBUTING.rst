@@ -67,10 +67,23 @@ message is appreciated, but not required.  All pull requests to the
 geopm/geopm repository on GitHub will automatically be submitted to
 GitHub Actions for unit testing.
 
-If the pull request you are submitting does not close an existing
-github issue, please open a new issue prior to submitting a pull
-request.  The issue referenced by a pull request should document the
-requirements for the pull request.
+Making a pull request is a step in a process.  The first step in this
+process is creating an issue from one the "Bug report", "Feature
+request", or "Story" templates.  This step identifies the high level
+goal for one or more changes to the repository.
+
+Each change to the repository is identified with an issue created
+using one of the issues templates that begins "Change - ".  The
+"Change" issue should reference the "Bug report," "Reature request,"
+or "Story" that the change relates to.  This is done with a "Relates
+to #XXXX" note in the issue description.
+
+Each pull request will close a "Change" issue by filling in the "Fixes
+#XXXX" notation in the pull request template, it may also close the
+high level issue, if this is the last required change to fix the bug,
+complete the feature, or accomplish the story described in the high
+level issue.  Note that the requirements for the pull request should
+be documented in the "Change" issue, not in the pull request itself.
 
 The link for creating an issue is here:
 
@@ -99,7 +112,7 @@ is as follows:
 #.
    An issue has been created about the problem that the pull request
    is solving.  Note that most PRs that change source code refer to
-   an issue created with one of the "Task - " templates.
+   an issue created with one of the "Change - " templates.
 
 #.
    Author creates a branch reflecting the issue number,

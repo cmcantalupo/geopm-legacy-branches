@@ -1,5 +1,5 @@
 ---
-name: Task - Add C++ methods
+name: Change - Add C++ methods
 about: Add new methods to an existing C++ class
 title: 'Added [...] methods to [...] C++ class'
 labels: task

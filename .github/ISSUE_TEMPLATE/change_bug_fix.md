@@ -1,5 +1,5 @@
 ---
-name: Task - Bug fix
+name: Change - Bug fix
 about: Reference issue for bug fix PR
 title: 'Fix for bug #XXXX'
 labels: ''

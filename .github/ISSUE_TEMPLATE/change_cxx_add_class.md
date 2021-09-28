@@ -1,5 +1,5 @@
 ---
-name: Task - Add C++ class
+name: Change - Add C++ class
 about: Add a new class to the C++ implementation
 title: 'Introduce new C++ class: [...]'
 labels: task

@@ -1,5 +1,5 @@
 ---
-name: Task - Add Python methods
+name: Change - Add Python methods
 about: Add new methods to an existing Python class
 title: 'Added [...] methods to [...] Python class'
 labels: task

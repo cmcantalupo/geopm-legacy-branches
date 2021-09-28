@@ -1,5 +1,5 @@
 ---
-name: Task - Testing improvement
+name: Change - Testing improvement
 about: Modify an existing test
 title: 'Improve [unit/integration] testing for [...]'
 labels: task

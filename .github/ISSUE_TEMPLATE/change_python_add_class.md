@@ -1,5 +1,5 @@
 ---
-name: Task - Add Python class
+name: Change - Add Python class
 about: Add a new class to the Python implementation
 title: 'Introduce new Python class: [...]'
 labels: task

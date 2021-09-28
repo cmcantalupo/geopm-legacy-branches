@@ -1,5 +1,5 @@
 ---
-name: Task - New external dependency
+name: Change - New external dependency
 about: Add external library, device driver, sysfs feature, or command line tool
 title: 'Add new external dependency: [...]'
 labels: task

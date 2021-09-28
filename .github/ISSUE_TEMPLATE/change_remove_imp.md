@@ -1,5 +1,5 @@
 ---
-name: Task - Remove classes or methods
+name: Change - Remove classes or methods
 about: Remove existing classes or methods
 title: 'Remove [...]'
 labels: task

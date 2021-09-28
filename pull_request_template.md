@@ -1,8 +1,16 @@
-- Fixes #XXXX from github issues.
-- [Brief description of the change]
+- Relates to #XXXX [bug report/feature request/story] from github issues
+- Fixes #XXXX change request from github issues.
 
-_Note_: All pull requests (PRs) are expected to close an existing
-github issue.  It is also expected that this issue, referenced above,
-will document the requirements for the PR.  If there is not an
-existing github issue related to this pull request, please open one
-before creating the pull request.
+[Brief description of the change]
+
+
+_Note_:
+
+Prior to creating a pull request, please see the documentation at
+either of the following links:
+
+https://github.com/geopm/geopm/blob/dev/CONTRIBUTING.rst#change-request
+
+https://geopm.github.io/geopmdpy/contrib.html#change-request
+
+about the process to change the GEOPM repository.

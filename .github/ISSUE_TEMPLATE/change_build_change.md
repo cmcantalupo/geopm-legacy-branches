@@ -1,5 +1,5 @@
 ---
-name: Task - Build system enhancement
+name: Change - Build system enhancement
 about: Modification made to enhance build infrastructure
 title: 'Changed build [...]'
 labels: task

@@ -1,5 +1,5 @@
 ---
-name: Task - Close feature request
+name: Change - Close feature request
 about: 'Reference issue for feature completion PR'
 title: 'Remaining work to close feature #XXXX'
 labels: task

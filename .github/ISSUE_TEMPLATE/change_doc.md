@@ -1,5 +1,5 @@
 ---
-name: Task - Documentation change
+name: Change - Documentation change
 about: Proposal to change documentation
 title: ''
 labels: task,doc
