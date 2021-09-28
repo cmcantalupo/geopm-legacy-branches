@@ -15,5 +15,7 @@ Done criteria:
 - [ ] Unit tests do not refer to private methods or members
 - [ ] New public methods have __doc__ string comments describing
       behavior, inputs, outputs and exceptions raised
+- [ ] The new implementation is fully compliant with Python 3. Python
+      2 is not supported.
 - [ ] [...]
 - [ ] [...]
