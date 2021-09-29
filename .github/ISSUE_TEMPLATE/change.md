@@ -1,6 +1,6 @@
 ---
 name: Change - [Empty template]
-about: Step in solving a feature or story (other Change templates preferred)
+about: Step in resolving a feature or story (other Change templates preferred)
 title: ''
 labels: task
 assignees: ''

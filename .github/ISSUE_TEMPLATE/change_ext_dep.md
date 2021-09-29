@@ -1,6 +1,6 @@
 ---
 name: Change - New external dependency
-about: Add external library, device driver, sysfs feature, or command line tool
+about: Add external library, python module, device driver, sysfs feature, or command line tool
 title: 'Add new external dependency: [...]'
 labels: task
 assignees: ''

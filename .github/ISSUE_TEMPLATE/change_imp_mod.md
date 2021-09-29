@@ -1,6 +1,6 @@
 ---
-name: Change - Change an existing implemenation
-about: Change implementation for existing feature
+name: Change - Modify an existing implementation
+about: Modify implementation for existing feature
 title: ''
 labels: task
 assignees: ''

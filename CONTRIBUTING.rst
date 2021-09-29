@@ -86,7 +86,7 @@ The link for creating a pull request is here:
 
 https://github.com/geopm/geopm/pulls
 
-and the link to the results of the unit testing can be found under the
+The link to the results of the unit testing can be found under the
 actions tab on the GEOPM GitHub webpage:
 
 https://github.com/geopm/geopm/actions
