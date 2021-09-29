@@ -30,8 +30,7 @@ time. To enable this when using the build script in the base directory
 run the following command:
 
 ```bash
-GEOPM_GLOBAL_CONFIG_OPTIONS="$GEOPM_GLOBAL_CONFIG_OPTIONS --enable-debug" \
-./build.sh
+GEOPM_GLOBAL_CONFIG_OPTIONS="--enable-debug" ./build.sh
 ```
 
 **Additional context**

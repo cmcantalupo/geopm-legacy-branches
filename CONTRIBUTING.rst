@@ -67,7 +67,7 @@ goal for one or more changes to the repository.
 
 Each change to the repository is identified with an issue created
 using one of the issues templates that begins "Change - ".  The
-"Change" issue should reference the "Bug report," "Reature request,"
+"Change" issue should reference the "Bug report," "Feature request,"
 or "Story" that the change relates to.  This is done with a "Relates
 to #XXXX" note in the issue description.
 
