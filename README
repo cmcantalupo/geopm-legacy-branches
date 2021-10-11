@@ -94,6 +94,46 @@ documentation here:
 https://geopm.github.io/geopmdpy/runtime.html
 
 
+Repository Directory Table of Contents
+--------------------------------------
+
+Directory Structure
+-------------------
+
+The GEOPM repository is organized into
+
+service
+service/integration
+service/integration/test
+service/geopmdpy_test
+service/test
+service/geopmdpy
+service/docs
+service/src
+service/src/geopm
+
+integration
+integration/apps
+integration/test
+integration/smoke
+integration/experiment
+integration/config
+
+runtime
+runtime/examples
+runtime/test
+runtime/test_hw
+runtime/ronn
+runtime/tutorial
+runtime/src
+runtime/geopmpy
+runtime/geopmpy_test
+
+indicators
+shell_completion
+
+
+
 Guide for Contributors
 ----------------------
 
