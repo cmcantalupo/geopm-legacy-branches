@@ -47,8 +47,8 @@ def create_signal(descriptor, report_formatter=None, trace_formatter=None):
 
     Args
 
-    descriptor (tuple of str, int, int): Tuple of name of the GEOPM signal, a domain enumeration
-    from the geopmdpy.topo package and instance number.
+    descriptor (tuple of str, int, int): Tuple of name of the GEOPM signal, a domain type
+    enumereation from the geopmdpy.topo package and domain index.
     Example: ("POWER_PACKAGE", geopmdpy.topo.DOMAIN_BOARD, 0)
 
     report_formatter (Formatter): Formatter for outputting the value of accumulator in a report
@@ -71,7 +71,10 @@ def create_signal(descriptor, report_formatter=None, trace_formatter=None):
 class Behavior(Enum):
     '''
     Enum representing Signal behaviors. Should match the integer representation of behaviors
-    returned by pio.
+    returned by pio, i.e. *must* be kept in sync with the enum in IOGroup.hpp.
+
+    TODO: This enum is a duplication and a better solution should be found to use the enum in
+    IOGroup.hpp.
     '''
     CONSTANT = 0
     MONOTONE = 1
@@ -240,8 +243,8 @@ class MetricList:
 
 class Signal:
     '''
-    Signal class stores value for a single GEOPM signal which is identified by a name, domain
-    and instance. Values should be updated at every sample interval via the update() method. This
+    Signal class stores value for a single GEOPM signal which is identified by a name, domain type
+    and domain index. Values should be updated at every sample interval via the update() method. This
     implementation will pass the signal values from update() to value() as is.
     '''
 
@@ -249,8 +252,8 @@ class Signal:
         '''
         Args
 
-        descriptor (tuple of str, int, int): Tuple of name of the GEOPM signal, a domain enumeration
-        from the geopmdpy.topo package and instance number.
+        descriptor (tuple of str, int, int): Tuple of name of the GEOPM signal, a domain type
+        enumereation from the geopmdpy.topo package and domain index.
         Example: ("POWER_PACKAGE", geopmdpy.topo.DOMAIN_BOARD, 0)
 
         behavior (Behavior enum): Behavior of the signal.
@@ -277,7 +280,7 @@ class Signal:
         '''
         Returns
 
-        A tuple of (name, domain, instance), which can be used in Agent.get_signals()
+        A tuple of (name, domain type, domain index), which can be used in Agent.get_signals()
         '''
         return self._descriptor
 
@@ -328,7 +331,7 @@ class Signal:
         '''
         Returns
 
-        A string of name@domain-instance.
+        A string of name@domain_type-domain_index.
         '''
         return \
             f'{self._descriptor[0]}@{topo.domain_name(self._descriptor[1])}-{self._descriptor[2]}'
