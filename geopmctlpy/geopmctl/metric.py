@@ -30,7 +30,7 @@
 #
 
 '''
-Defines Metric class and factory method(s) for it.
+Defines Metric/Signal related classes and factory method(s).
 '''
 
 from enum import Enum
