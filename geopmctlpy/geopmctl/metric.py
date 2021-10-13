@@ -36,6 +36,7 @@ Defines Metric class and factory method(s) for it.
 from enum import Enum
 from abc import ABC
 from abc import abstractmethod
+import yaml
 from geopmdpy import pio
 from geopmdpy import topo
 
@@ -218,6 +219,27 @@ class MetricList:
         '''
         for metric in self._metrics:
             metric.update(self._time_signal)
+
+    def get_report_str(self):
+        '''
+        Returns
+
+        A string that would be printed in a report.
+        '''
+        out_dict = {metric.get_report_header(): metric.get_accumulator_value_str()
+                    for metric in self._metrics}
+        return yaml.dump(out_dict)
+
+    def get_trace_row(self):
+        '''
+        Returns the metric values for the sample interval formatted according to metric trace
+        format.
+
+        Returns
+
+        List of str: One element per metric.get_trace_value_str()
+        '''
+        return [metric.get_trace_value_str() for metric in self._metrics]
 
 
 class Signal:
@@ -522,6 +544,55 @@ class Metric:
             return_val = self._accumulator.value()
 
         return return_val
+
+    def get_trace_value_str(self):
+        '''
+        Returns
+
+        Value formatted as indicated by trace_format.
+        '''
+        return_val = None
+        if self._trace_format is None:
+            return_val = self.value()
+        elif callable(self._trace_format):
+            return_val = self._trace_format(self.value())
+        else:
+            return_val = self._trace_format.format(self.value())
+        return return_val
+
+    def get_accumulator_value_str(self):
+        '''
+        Returns
+
+        Accumulator value formatted as indicated by report_format and unit appended.
+        '''
+        return_val = None
+        acc_value = self.accumulator_value()
+        if acc_value is not None:
+            if self._report_format is None:
+                return_val = acc_value
+            elif callable(self._report_format):
+                return_val = self._report_format(acc_value)
+            else:
+                return_val = self._report_format.format(acc_value)
+            return_val += self._unit
+        return return_val
+
+    def get_report_header(self):
+        '''
+        Returns
+
+        The descriptor string that would go into a report file.
+        '''
+        return self._report_header
+
+    def get_trace_header(self):
+        '''
+        Returns
+
+        The header string that would go into a trace file.
+        '''
+        return self._trace_header
 
 
 class Accumulator(ABC):
