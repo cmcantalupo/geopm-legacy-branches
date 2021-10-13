@@ -41,45 +41,30 @@ from geopmdpy import pio
 from geopmdpy import topo
 
 
-def create_signal(name, domain, instance, unit="", report_header=None,
-                  trace_header=None, report_format=None, trace_format=None):
+def create_signal(descriptor, report_formatter=None, trace_formatter=None):
     '''
     Factory function for creating a Signal object.
 
     Args
 
-    name (str): Name of the GEOPM signal.
+    descriptor (tuple of str, int, int): Tuple of name of the GEOPM signal, a domain enumeration
+    from the geopmdpy.topo package and instance number.
+    Example: ("POWER_PACKAGE", geopmdpy.topo.DOMAIN_BOARD, 0)
 
-    domain (geopmdpy.topo field): A domain enumeration from the geopmdpy.topo package
+    report_formatter (Formatter): Formatter for outputting the value of accumulator in a report
+    file. Passed to the Metric instance created from this signal as sample_only.
 
-    instance (int): Instance number.
-
-    unit (str): A string such as joules, seconds, etc. Default is empty string.
-
-    report_header (str): A descriptor string that would go into a report file. Default is signal
-    signature.
-
-    trace_header (str): A header string that would go into a trace file. Default is signal
-    signature.
-
-    report_format (str or func): A format string with a single value or a function with
-    signature func(x) that will that will be used to format the value of this metric in report
-    output. If None, no formatting will be applied. No formatting by default.
-
-    trace_format (str or func): A format string with a single value or a function with signature
-    func(x) that will that will be used to format the value of this metric in trace output. If
-    None, no formatting will be applied. No formatting by default.
+    trace_formatter (Formatter): Formatter for outputting the metric sample value in a trace
+    file. Passed to the Metric instance created from this signal as sample_only.
     '''
     return_val = None
-    behavior = Behavior(pio.signal_info(name)[2])
+    behavior = Behavior(pio.signal_info(descriptor[0])[2])
     if behavior is Behavior.MONOTONE:
-        return_val = MonotoneSignal(name, domain, instance, unit=unit,
-                                    report_header=report_header, trace_header=trace_header,
-                                    report_format=report_format, trace_format=trace_format)
+        return_val = MonotoneSignal(descriptor, report_formatter=report_formatter,
+                                    trace_formatter=trace_formatter)
     else:
-        return_val = Signal(name, domain, instance, behavior, unit=unit,
-                            report_header=report_header, trace_header=trace_header,
-                            report_format=report_format, trace_format=trace_format)
+        return_val = Signal(descriptor, behavior, report_formatter=report_formatter,
+                            trace_formatter=trace_formatter)
     return return_val
 
 
@@ -131,13 +116,13 @@ class SignalList:
         '''
         self._signals.append(signal)
 
-    def get_tuples(self):
+    def get_descriptors(self):
         '''
         Returns
 
-        A list of signal.get_tuple() outputs which can be used in Agent.get_signals().
+        A list of signal.get_descriptor() outputs which can be used in Agent.get_signals().
         '''
-        return [sig.get_tuple() for sig in self._signals]
+        return [sig.get_descriptor() for sig in self._signals]
 
     def __getitem__(self, idx):
         '''
@@ -154,7 +139,7 @@ class SignalList:
             return_val = self._signals[idx]
         elif isinstance(idx, tuple):
             for sig in self._signals:
-                if sig.get_tuple() == idx:
+                if sig.get_descriptor() == idx:
                     return_val = sig
                     break
         elif isinstance(idx, str):
@@ -196,8 +181,8 @@ class MetricList:
         else:
             accumulator = TimeAvgAccumulator()
         metric = Metric([signal], Metric.OPERATIONS['sample_only'], accumulator,
-                        signal.report_header(), signal.trace_header(), signal.unit(),
-                        signal.report_format(), signal.trace_format())
+                        report_formatter=signal.get_report_formatter(),
+                        trace_formatter=signal.get_trace_formatter())
         self.append_metric(metric)
 
     def append_metric(self, metric):
@@ -224,22 +209,33 @@ class MetricList:
         '''
         Returns
 
-        A string that would be printed in a report.
+        A YAML string that would be printed in a report. Only for the metrics that return True for
+        is_reported().
         '''
         out_dict = {metric.get_report_header(): metric.get_accumulator_value_str()
-                    for metric in self._metrics}
+                    for metric in self._metrics if metric.is_reported()}
         return yaml.dump(out_dict)
 
     def get_trace_row(self):
         '''
         Returns the metric values for the sample interval formatted according to metric trace
-        format.
+        format. Only for the metrics that return True for is_traced().
 
         Returns
 
         List of str: One element per metric.get_trace_value_str()
         '''
-        return [metric.get_trace_value_str() for metric in self._metrics]
+        return [metric.get_trace_value_str() for metric in self._metrics if metric.is_traced()]
+
+    def get_trace_header(self):
+        '''
+        Returns the trace file header row. Only for the metrics that return True for is_traced().
+
+        Returns
+
+        List of str: One element per metric.get_trace_header()
+        '''
+        return [metric.get_trace_header() for metric in self._metrics if metric.is_traced()]
 
 
 class Signal:
@@ -249,63 +245,41 @@ class Signal:
     implementation will pass the signal values from update() to value() as is.
     '''
 
-    def __init__(self, name, domain, instance, behavior, unit="", report_header=None,
-                 trace_header=None, report_format=None, trace_format=None):
+    def __init__(self, descriptor, behavior, report_formatter=None, trace_formatter=None):
         '''
         Args
 
-        name (str): Name of the GEOPM signal.
-
-        domain (geopmdpy.topo field): A domain enumeration from the geopmdpy.topo package
-
-        instance (int): Instance number.
+        descriptor (tuple of str, int, int): Tuple of name of the GEOPM signal, a domain enumeration
+        from the geopmdpy.topo package and instance number.
+        Example: ("POWER_PACKAGE", geopmdpy.topo.DOMAIN_BOARD, 0)
 
         behavior (Behavior enum): Behavior of the signal.
 
-        unit (str): A string such as joules, seconds, etc. Default is empty string.
+        report_formatter (Formatter): Formatter for outputting the value of accumulator in a report
+        file. Passed to the Metric instance created from this signal as sample_only.
 
-        report_header (str): A descriptor string that would go into a report file. Default is signal
-        signature.
-
-        trace_header (str): A header string that would go into a trace file. Default is signal
-        signature.
-
-        report_format (str or func): A format string with a single value or a function with
-        signature func(x) that will that will be used to format the value of this metric in report
-        output. If None, no formatting will be applied. No formatting by default.
-
-        trace_format (str or func): A format string with a single value or a function with signature
-        func(x) that will that will be used to format the value of this metric in trace output. If
-        None, no formatting will be applied. No formatting by default.
+        trace_formatter (Formatter): Formatter for outputting the metric sample value in a trace
+        file. Passed to the Metric instance created from this signal as sample_only.
         '''
-        self._name = name
-        self._domain = domain
-        self._instance = instance
+        self._descriptor = descriptor
         self._behavior = behavior
-        self._unit = unit
-        self._report_header = self.get_signature() if report_header is None else report_header
-        self._trace_header = self.get_signature() if trace_header is None else trace_header
-        self._report_format = report_format
-        self._trace_format = trace_format
+        if report_formatter is None:
+            self._report_formatter = Formatter(self.get_signature())
+        else:
+            self._report_formatter = report_formatter
+        if trace_formatter is None:
+            self._trace_formatter = Formatter(self.get_signature())
+        else:
+            self._trace_formatter = trace_formatter
         self._value = None
 
-    def get_name(self):
+    def get_descriptor(self):
         '''
-        Getter method for Signal name.
-        '''
-        return self._name
+        Returns
 
-    def get_domain(self):
+        A tuple of (name, domain, instance), which can be used in Agent.get_signals()
         '''
-        Getter method for Signal domain.
-        '''
-        return self._domain
-
-    def get_instance(self):
-        '''
-        Getter method for Signal instance.
-        '''
-        return self._instance
+        return self._descriptor
 
     def get_behavior(self):
         '''
@@ -313,35 +287,17 @@ class Signal:
         '''
         return self._behavior
 
-    def get_unit(self):
+    def get_report_formatter(self):
         '''
-        Getter method for Signal unit.
+        Getter method for Signal report formatter.
         '''
-        return self._unit
+        return self._report_formatter
 
-    def get_report_header(self):
+    def get_trace_formatter(self):
         '''
-        Getter method for Signal report header.
+        Getter method for Signal trace formatter.
         '''
-        return self._report_header
-
-    def get_trace_header(self):
-        '''
-        Getter method for Signal trace header.
-        '''
-        return self._trace_header
-
-    def get_report_format(self):
-        '''
-        Getter method for Signal report format.
-        '''
-        return self._report_format
-
-    def get_trace_format(self):
-        '''
-        Getter method for Signal trace format.
-        '''
-        return self._trace_format
+        return self._trace_formatter
 
     def value(self):
         '''
@@ -368,21 +324,14 @@ class Signal:
         '''
         self._value = value
 
-    def get_tuple(self):
-        '''
-        Returns
-
-        A tuple of (name, domain, instance), which can be used in Agent.get_signals()
-        '''
-        return self._name, self._domain, self._instance
-
     def get_signature(self):
         '''
         Returns
 
         A string of name@domain-instance.
         '''
-        return f'{self._name}@{topo.domain_name(self._domain)}-{self._instance}'
+        return \
+            f'{self._descriptor[0]}@{topo.domain_name(self._descriptor[1])}-{self._descriptor[2]}'
 
 
 class MonotoneSignal(Signal):
@@ -391,12 +340,10 @@ class MonotoneSignal(Signal):
     sample for monotone signals.
     '''
 
-    def __init__(self, name, domain, instance, unit="", report_header=None,
-                 trace_header=None, report_format=None, trace_format=None):
+    def __init__(self, descriptor, report_formatter=None, trace_formatter=None):
         self._last_value = None
-        super().__init__(name, domain, instance, Behavior.MONOTONE, unit=unit,
-                         report_header=report_header, trace_header=trace_header,
-                         report_format=report_format, trace_format=trace_format)
+        super().__init__(descriptor, Behavior.MONOTONE, report_formatter=report_formatter,
+                         trace_formatter=trace_formatter)
 
     def reset(self):
         self._last_value = None
@@ -465,8 +412,8 @@ class Metric:
         'multiply': lambda x, y: x * y,
     }
 
-    def __init__(self, signals, operation, accumulator, report_header, trace_header, unit="",
-                 report_format=None, trace_format=None):
+    def __init__(self, signals, operation, accumulator, report_formatter=None,
+                 trace_formatter=None):
         '''
 
         Args
@@ -476,30 +423,19 @@ class Metric:
 
         operation (str): One of keys from Metric.OPERATIONS.
 
-        accumulator (Accumulator obj): An accumulator for the final reported value.
+        accumulator (Accumulator): An accumulator for the final reported value.
 
-        report_header (str): A descriptor string that would go into a report file.
+        report_formatter (Formatter): Formatter for outputting the value of accumulator in a report
+        file.
 
-        trace_header (str): A header string that would go into a trace file.
-
-        unit (str): A string such as joules, seconds, etc. Default is empty string.
-
-        report_format (str or func): A format string with a single value or a function with
-        signature func(x) that will that will be used to format the value of this metric in report
-        output. If None, no formatting will be applied.
-
-        trace_format (str or func): A format string with a single value or a function with signature
-        func(x) that will that will be used to format the value of this metric in trace output. If
-        None, no formatting will be applied.
+        trace_formatter (Formatter): Formatter for outputting the metric sample value in a trace
+        file.
         '''
-        self._report_header = report_header
         self._signals = signals
         self._operation = operation
         self._accumulator = accumulator
-        self._trace_header = trace_header
-        self._unit = unit
-        self._report_format = report_format
-        self._trace_format = trace_format
+        self._report_formatter = report_formatter
+        self._trace_formatter = trace_formatter
         self._value = None
         self.reset()
 
@@ -547,36 +483,23 @@ class Metric:
 
     def get_trace_value_str(self):
         '''
+        Should be called only if is_reported() returns True. Raises error otherwise.
+
         Returns
 
         Value formatted as indicated by trace_format.
         '''
-        return_val = None
-        if self._trace_format is None:
-            return_val = self.value()
-        elif callable(self._trace_format):
-            return_val = self._trace_format(self.value())
-        else:
-            return_val = self._trace_format.format(self.value())
-        return return_val
+        return self._trace_formatter.format_value(self.value())
 
     def get_accumulator_value_str(self):
         '''
+        Should be called only if is_reported() returns True. Raises error otherwise.
+
         Returns
 
         Accumulator value formatted as indicated by report_format and unit appended.
         '''
-        return_val = None
-        acc_value = self.accumulator_value()
-        if acc_value is not None:
-            if self._report_format is None:
-                return_val = acc_value
-            elif callable(self._report_format):
-                return_val = self._report_format(acc_value)
-            else:
-                return_val = self._report_format.format(acc_value)
-            return_val += self._unit
-        return return_val
+        return self._report_formatter.format_value(self._accumulator.value())
 
     def get_report_header(self):
         '''
@@ -584,7 +507,7 @@ class Metric:
 
         The descriptor string that would go into a report file.
         '''
-        return self._report_header
+        return self._report_formatter.header()
 
     def get_trace_header(self):
         '''
@@ -592,7 +515,23 @@ class Metric:
 
         The header string that would go into a trace file.
         '''
-        return self._trace_header
+        return self._trace_formatter.header()
+
+    def is_reported(self):
+        '''
+        Returns
+
+        True if this metric has an accumulator and a report formatter.
+        '''
+        return (self._accumulator is not None) and (self._report_formatter is not None)
+
+    def is_traced(self):
+        '''
+        Returns
+
+        True if this metric has a trace formatter.
+        '''
+        return self._trace_formatter is not None
 
 
 class Accumulator(ABC):
@@ -691,3 +630,51 @@ class SumAccumulator(Accumulator):
 
     def value(self):
         return self._acc_value
+
+
+class Formatter:
+    '''
+    Formatter class is used by Metric instances to format values and output text for trace or report
+    files.
+    '''
+
+    def __init__(self, header, formatter=None, unit=""):
+        '''
+        header (str): A header string that would go into a report/trace file.
+
+        formatter (str or func): A format string with a single value or a function with
+        signature func(x) that will that will be used to format the value of this metric in
+        report/trace output. If None (default), no formatting will be applied.
+
+        unit (str): A string such as joules, seconds, etc. Default is empty string.
+        '''
+        self._header = header
+        self._formatter = formatter
+        self._unit = unit
+
+    def format_value(self, value):
+        '''
+        Formats a value according to the format of this formatter and appends unit.
+
+        Returns
+
+        Value in string format.
+        '''
+        return_val = None
+        if self._formatter is None:
+            return_val = str(value)
+        elif callable(self._formatter):
+            return_val = self._formatter(value)
+        else:
+            return_val = self._formatter.format(value)
+        return_val += self._unit
+
+        return return_val
+
+    def header(self):
+        '''
+        Returns
+
+        The header string that should go in report or trace file.
+        '''
+        return self._header
