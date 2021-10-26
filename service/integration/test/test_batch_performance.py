@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #  Copyright (c) 2015 - 2021, Intel Corporation
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -29,25 +30,52 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-EXTRA_DIST += integration/README.md \
-              integration/build_dasbus.sh \
-              integration/install_service.sh \
-              integration/test/__main__.py \
-              integration/test/TestBashExamples.py \
-              integration/test/check_write_session.sh \
-              integration/test/test_batch_performance.py \
-              integration/test/test_controller.py \
-              integration/test/test_controller.sh \
-              integration/test/test_sst_priority.sh \
-              integration/test/test_su_give_access.sh \
-              # end
+from time import time
+from time import sleep
+from geopmdpy import pio
+from geopmdpy import topo
 
-check_PROGRAMS += integration/test/test_batch_server \
-                  integration/test/test_batch_interface \
-                  #end
 
-integration_test_test_batch_server_SOURCES = integration/test/test_batch_server.cpp
-integration_test_test_batch_server_LDADD = libgeopmd.la
+def get_all_msrs():
+    return [nn for nn in pio.signal_names()
+            if nn.startswith('MSR::') and
+            pio.signal_domain_type(nn) == topo.domain_type('core')]
 
-integration_test_test_batch_interface_SOURCES = integration/test/test_batch_interface.cpp
-integration_test_test_batch_interface_LDADD = libgeopmd.la
+def get_signals(signal_idx):
+    result = []
+    for idx in signal_idx:
+        result.append(pio.sample(idx))
+    return result
+
+
+def push_msrs(all_msrs):
+    signal_idx = []
+    for cc in range(topo.num_domain('core')):
+        for msr in all_msrs:
+            idx = pio.push_signal('SERVICE::' + msr, 'core', cc)
+            signal_idx.append(idx)
+    return signal_idx
+
+def main():
+    ta = time()
+    all_msrs = get_all_msrs()
+    tb = time()
+    print(f'pio.signal_names(): {tb - ta} sec')
+    ta = time()
+    signal_idx = push_msrs(all_msrs)
+    tb = time()
+    print(f'pio.push_signal(): {tb - ta} sec')
+    for trial in range(3):
+        print(f'Trial {trial}')
+        ta = time()
+        pio.read_batch()
+        tb = time()
+        print(f'pio.read_batch(): {tb - ta} sec')
+        ta = time()
+        signal = get_signals(signal_idx)
+        tb = time()
+        print(f'pio.sample(): {tb - ta} sec')
+        sleep(0.05)
+
+if __name__ == '__main__':
+    main()
