@@ -37,11 +37,18 @@
 void run(void)
 {
     geopm::PlatformIO &pio = geopm::platform_io();
-    int signal_idx = pio.push_signal("SERVICE::TIME", GEOPM_DOMAIN_CPU, 0);
+    std::vector<int> signal_handles;
+    signal_handles.push_back(pio.push_signal("SERVICE::TIME", GEOPM_DOMAIN_BOARD, 0));
+    signal_handles.push_back(pio.push_signal("SERVICE::ENERGY_PACKAGE", GEOPM_DOMAIN_PACKAGE, 0));
+    signal_handles.push_back(pio.push_signal("SERVICE::ENERGY_PACKAGE", GEOPM_DOMAIN_PACKAGE, 1));
+    signal_handles.push_back(pio.push_signal("SERVICE::POWER_PACKAGE", GEOPM_DOMAIN_PACKAGE, 0));
+    signal_handles.push_back(pio.push_signal("SERVICE::POWER_PACKAGE", GEOPM_DOMAIN_PACKAGE, 1));
     for (int idx = 0; idx < 10; ++idx) {
         pio.read_batch();
-        double tt = pio.sample(signal_idx);
-        std::cerr << tt << "\n";
+        for (const auto &handle : signal_handles) {
+            std::cerr << pio.sample(handle) << " ";
+        }
+        std::cerr << "\n";
         sleep(1);
     }
 }
