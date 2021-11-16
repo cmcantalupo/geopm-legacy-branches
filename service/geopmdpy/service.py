@@ -56,12 +56,12 @@ except ImportError as ee:
     raise ImportError(err_msg) from ee
 
 
-_VAR_PATH = '/var/run/geopm-service'
+GEOPM_SERVICE_VAR_PATH = '/var/run/geopm-service'
 
-class ActiveSessions
+class ActiveSessions(object):
     def __init__(self):
         self._sessions = dict()
-        os.makedirs(_VAR_PATH, exist_ok=True)
+        self._VAR_PATH = GEOPM_SERVICE_VAR_PATH
 
     def is_client_active(self, client_pid):
         result = client_pid in self._sessions
@@ -76,7 +76,6 @@ class ActiveSessions
 
     def add_client(self, client_pid, signals, controls, watch_id):
         self.check_client_active(client_pid, 'add_client')
-        session_file = self._get_session_file(client_pid)
         session_data = {'client_pid': client_pid,
                         'mode': 'r',
                         'signals': list(signals),
@@ -97,7 +96,6 @@ class ActiveSessions
 
     def get_mode(self, client_pid):
         self.check_client_active(client_pid, 'get_mode')
-            raise RuntimeError(f'No session exists for client PID: {client_pid}')
         return self._sessions[client_pid]['mode']
 
     def get_signals(self, client_pid):
@@ -118,10 +116,8 @@ class ActiveSessions
 
     def set_write_client(self, client_pid):
         self.check_client_active(client_pid, 'set_write_client')
-        session_file = self._get_session_file(client_pid)
         self._sessions[client_pid]['mode'] = 'rw'
-            with open(session_file, 'w') as fid:
-                json.dump(self._sessions[client_pid], fid)
+        self._update_session_file(client_pid)
 
     def set_batch_server(self, client_pid, batch_pid):
         self.check_client_active(client_pid, 'set_batch_server')
@@ -137,10 +133,11 @@ class ActiveSessions
         self._update_session_file(client_pid)
 
     def _get_session_file(self, client_pid):
-        return os.path.join(_VAR_PATH, 'session-{}.json'.format(client_pid))
+        return os.path.join(self._VAR_PATH, 'session-{}.json'.format(client_pid))
 
     def _update_session_file(self, client_pid):
         session_file = self._get_session_file(client_pid)
+        os.makedirs(self._VAR_PATH, exist_ok=True)
         with open(session_file, 'w') as fid:
             json.dump(self._sessions[client_pid], fid)
 
@@ -157,6 +154,7 @@ class PlatformService(object):
 
         """
         self._pio = pio
+        self._VAR_PATH = GEOPM_SERVICE_VAR_PATH
         self._CONFIG_PATH = '/etc/geopm-service'
         self._ALL_GROUPS = [gg.gr_name for gg in grp.getgrall()]
         self._DEFAULT_ACCESS = '0.DEFAULT_ACCESS'
@@ -502,7 +500,7 @@ class PlatformService(object):
             except ex:
                 sys.stderr.write(f'Failed to stop batch server {batch_pid}: {ex}')
         if client_pid == self._write_pid:
-            save_dir = os.path.join(_VAR_PATH, self._SAVE_DIR)
+            save_dir = os.path.join(self._VAR_PATH, self._SAVE_DIR)
             self._pio.restore_control() # TODO Make this call restore_control_dir()
             shutil.rmtree(save_dir)
             self._write_pid = None
@@ -570,7 +568,7 @@ class PlatformService(object):
         cont_req = {cc[2] for cc in control_config}
         supported_signals = self._active_sessions.get_signals(client_pid)
         supported_controls = self._active_sessions.get_controls(client_pid)
-        if not sig_req.issubset(supported_signals)
+        if not sig_req.issubset(supported_signals):
             raise RuntimeError('Requested signals that are not in allowed list: {}' \
                                .format(sorted(sig_req.difference(supported_signals))))
         elif not cont_req.issubset(supported_controls):
@@ -754,7 +752,7 @@ class PlatformService(object):
                 raise RuntimeError('The geopm service already has a connected "rw" mode client')
             self._active_sessions.set_write_client(client_pid)
             self._write_pid = client_pid
-            save_dir = os.path.join(_VAR_PATH, self._SAVE_DIR)
+            save_dir = os.path.join(self._VAR_PATH, self._SAVE_DIR)
             os.makedirs(save_dir)
             # TODO: Will need to save to disk in order to support
             # daemon restart

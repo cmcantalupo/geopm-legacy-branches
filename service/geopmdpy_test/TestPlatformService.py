@@ -53,6 +53,7 @@ class TestPlatformService(unittest.TestCase):
         self._platform_service = PlatformService()
         self._platform_service._CONFIG_PATH = self._CONFIG_PATH.name
         self._platform_service._VAR_PATH = self._VAR_PATH.name
+        self._platform_service._active_sessions._VAR_PATH = self._VAR_PATH.name
         self._platform_service._ALL_GROUPS = ['named']
         self._bad_user_id = 'GEOPM_TEST_INVALID_USER_NAME'
         self._bad_group_id = 'GEOPM_TEST_INVALID_GROUP_NAME'
@@ -401,9 +402,7 @@ default
              mock.patch('geopmdpy.pio.signal_names', return_value=['energy', 'frequency']), \
              mock.patch('geopmdpy.pio.control_names', return_value=['controls', 'geopm', 'named', 'power']):
             self._platform_service.open_session('', client_pid)
-            self.assertIn(client_pid, self._platform_service._sessions)
-            self.assertEqual(self._platform_service._sessions[client_pid], session_data)
-
+            self.assertTrue(self._platform_service.check_client(client_pid))
             session_file = self._platform_service._get_session_file(client_pid)
             self.assertTrue(os.path.isfile(session_file),
                             msg = 'File does not exist: {}'.format(session_file))
@@ -422,7 +421,6 @@ default
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
-        self._platform_service._sessions[client_pid] = session_data
 
         with mock.patch('gi.repository.GLib.source_remove', return_value=[]) as gsr, \
              mock.patch('geopmdpy.pio.restore_control', return_value=[]) as prc, \
@@ -432,7 +430,7 @@ default
             prc.assert_not_called()
             srm.assert_not_called()
             gsr.assert_called_once_with(watch_id)
-            self.assertNotIn(client_pid, self._platform_service._sessions)
+            self.assertFalse(self._platform_service.check_client(client_pid))
             session_file = self._platform_service._get_session_file(client_pid)
             osr.assert_called_once_with(session_file)
 
@@ -440,7 +438,6 @@ default
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
-        self._platform_service._sessions[client_pid] = session_data
         self._platform_service._write_pid = client_pid
 
         with mock.patch('gi.repository.GLib.source_remove', return_value=[]) as gsr, \
@@ -454,7 +451,7 @@ default
             srm.assert_called_once_with(save_dir)
             self.assertIsNone(self._platform_service._write_pid)
             gsr.assert_called_once_with(watch_id)
-            self.assertNotIn(client_pid, self._platform_service._sessions)
+            self.assertFalse(self._platform_service.check_client(client_pid))
             session_file = self._platform_service._get_session_file(client_pid)
             osr.assert_called_once_with(session_file)
 
@@ -462,7 +459,6 @@ default
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
-        self._platform_service._sessions[client_pid] = session_data
 
         valid_signals = session_data['signals']
         signal_config = [(0, 0, sig) for sig in valid_signals]
@@ -500,7 +496,6 @@ default
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
-        self._platform_service._sessions[client_pid] = session_data
 
         valid_signals = session_data['signals']
         valid_controls = session_data['controls']
@@ -512,9 +507,6 @@ default
              mock.patch('geopmdpy.pio.save_control', return_value=[]):
             self._platform_service.start_batch(client_pid, signal_config,
                                                control_config)
-        # Assertions about _write_mode modifying the internal state
-        self.assertEqual(self._platform_service._sessions[client_pid]['mode'],
-                         'rw')
 
         # FIXME This is the same as it is for test_open_session.  It should be refactored in
         # the service.py into a helper.  The bit about writing the session data to JSON.
@@ -543,7 +535,6 @@ default
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
-        self._platform_service._sessions[client_pid] = session_data
         server_pid = 123
 
         with mock.patch('geopmdpy.pio.stop_batch_server', return_value=[]) as sbd:
@@ -558,7 +549,6 @@ default
 
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
-        self._platform_service._sessions[client_pid] = session_data
 
         signal_name = 'geopm'
         err_msg = 'Requested signal that is not in allowed list: {}'.format(signal_name)
@@ -568,7 +558,6 @@ default
     def test_read_signal(self):
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
-        self._platform_service._sessions[client_pid] = session_data
 
         signal_name = 'energy'
         domain = 7
@@ -585,7 +574,6 @@ default
 
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
-        self._platform_service._sessions[client_pid] = session_data
 
         control_name = 'energy'
         err_msg = 'Requested control that is not in allowed list: {}'.format(control_name)
@@ -595,7 +583,6 @@ default
     def test_write_control(self):
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
-        self._platform_service._sessions[client_pid] = session_data
 
         control_name = 'geopm'
         domain = 7
@@ -609,20 +596,6 @@ default
     def test__read_allowed_invalid(self):
         result = self._platform_service._read_allowed('INVALID_PATH')
         self.assertEqual([], result)
-
-    def test_check_client(self):
-        result = self._platform_service.check_client('')
-        self.assertTrue(result)
-
-        session_data = self._write_session_files_helper()
-        client_pid = session_data['client_pid']
-        self._platform_service._sessions[client_pid] = session_data
-
-        with mock.patch('geopmdpy.service.PlatformService.close_session',
-                        return_value=[]) as pcs:
-            result = self._platform_service.check_client(client_pid)
-            self.assertFalse(result)
-            pcs.assert_called_once_with(client_pid)
 
     def test_get_cache(self):
         topo = mock.MagicMock()
