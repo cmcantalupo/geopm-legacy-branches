@@ -65,17 +65,18 @@ class ActiveSessions(object):
 
     def is_client_active(self, client_pid):
         result = client_pid in self._sessions
-        sesssion_file = self._get_session_file()
+        session_file = self._get_session_file(client_pid)
         if not result and os.path.isfile(session_file):
             raise RuntimeError(f'Session file exists, but client {client_pid} is not tracked: {session_file}')
         return result
 
     def check_client_active(self, client_pid, msg=''):
         if not self.is_client_active(client_pid):
-            raise RuntimeError(f'No session exists for client PID: {client_pid}: {msg}')
+            raise RuntimeError(f"Operation '{msg}' not allowed without an open session. Client PID: {client_pid}")
 
     def add_client(self, client_pid, signals, controls, watch_id):
-        self.check_client_active(client_pid, 'add_client')
+        if self.is_client_active(client_pid):
+            return
         session_data = {'client_pid': client_pid,
                         'mode': 'r',
                         'signals': list(signals),
@@ -460,7 +461,8 @@ class PlatformService(object):
                               the session.
 
         """
-        self._active_sessions.check_client_active(client_pid, 'PlatformOpenSession')
+        if self._active_sessions.is_client_active(client_pid):
+            return
         signals, controls = self.get_user_access(user)
         watch_id = self._watch_client(client_pid)
         self._active_sessions.add_client(client_pid, signals, controls, watch_id)
@@ -504,7 +506,7 @@ class PlatformService(object):
             self._pio.restore_control() # TODO Make this call restore_control_dir()
             shutil.rmtree(save_dir)
             self._write_pid = None
-        GLib.source_remove(session['watch_id'])
+        GLib.source_remove(self._active_sessions.get_watch_id(client_pid))
         self._active_sessions.remove_client(client_pid)
 
     def start_batch(self, client_pid, signal_config, control_config):

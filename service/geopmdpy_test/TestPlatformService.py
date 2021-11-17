@@ -57,7 +57,7 @@ class TestPlatformService(unittest.TestCase):
         self._platform_service._ALL_GROUPS = ['named']
         self._bad_user_id = 'GEOPM_TEST_INVALID_USER_NAME'
         self._bad_group_id = 'GEOPM_TEST_INVALID_GROUP_NAME'
-
+        self._session_file_format = os.path.join(self._VAR_PATH.name, 'session-{client_pid}.json')
     def tearDown(self):
         self._CONFIG_PATH.cleanup()
         self._VAR_PATH.cleanup()
@@ -370,8 +370,7 @@ default
         with mock.patch('geopmdpy.service.PlatformService._get_user_groups', return_value=[]), \
              mock.patch('geopmdpy.service.PlatformService._watch_client', return_value=[]):
             self._platform_service.open_session('', client_pid)
-
-            session_file = self._platform_service._get_session_file(client_pid)
+            session_file = self._session_file_format.format(client_pid=client_pid)
             self.assertTrue(os.path.isfile(session_file),
                             msg = 'File does not exist:{}'.format(session_file))
 
@@ -390,10 +389,11 @@ default
                         'mode': 'r',
                         'signals': signals_default,
                         'controls': controls_default,
-                        'watch_id': watch_id}
+                        'watch_id': watch_id,
+                        'batch_server': None}
         return session_data
 
-    def test_open_session(self):
+    def open_mock_session(self, session_key):
         session_data = self._write_session_files_helper()
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
@@ -401,16 +401,21 @@ default
              mock.patch('geopmdpy.service.PlatformService._watch_client', return_value=watch_id), \
              mock.patch('geopmdpy.pio.signal_names', return_value=['energy', 'frequency']), \
              mock.patch('geopmdpy.pio.control_names', return_value=['controls', 'geopm', 'named', 'power']):
-            self._platform_service.open_session('', client_pid)
-            self.assertTrue(self._platform_service.check_client(client_pid))
-            session_file = self._platform_service._get_session_file(client_pid)
+            self._platform_service.open_session(session_key, client_pid)
+            self._platform_service._active_sessions.check_client_active(client_pid, 'open_mock_session')
+            session_file = self._session_file_format.format(client_pid=client_pid)
             self.assertTrue(os.path.isfile(session_file),
                             msg = 'File does not exist: {}'.format(session_file))
             with open(session_file, 'r') as fid:
                 parsed_session_data = json.load(fid)
             self.assertEqual(session_data, parsed_session_data)
+        return session_data
+
+    def test_open_session(self):
+        self.open_mock_session('')
 
     def test_close_session_invalid(self):
+        session_data = self.open_mock_session('')
         client_pid = 999
         operation = 'PlatformCloseSession'
         err_msg = "Operation '{}' not allowed without an open session".format(operation)
@@ -418,21 +423,18 @@ default
             self._platform_service.close_session(client_pid)
 
     def test_close_session_read(self):
-        session_data = self._write_session_files_helper()
+        session_data = self.open_mock_session('')
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
 
         with mock.patch('gi.repository.GLib.source_remove', return_value=[]) as gsr, \
              mock.patch('geopmdpy.pio.restore_control', return_value=[]) as prc, \
-             mock.patch('os.remove', return_value=[]) as osr, \
              mock.patch('shutil.rmtree', return_value=[]) as srm:
             self._platform_service.close_session(client_pid)
             prc.assert_not_called()
             srm.assert_not_called()
             gsr.assert_called_once_with(watch_id)
-            self.assertFalse(self._platform_service.check_client(client_pid))
-            session_file = self._platform_service._get_session_file(client_pid)
-            osr.assert_called_once_with(session_file)
+            self.assertFalse(self._platform_service._active_sessions.is_client_active(client_pid))
 
     def test_close_session_write(self):
         session_data = self._write_session_files_helper()
@@ -452,7 +454,7 @@ default
             self.assertIsNone(self._platform_service._write_pid)
             gsr.assert_called_once_with(watch_id)
             self.assertFalse(self._platform_service.check_client(client_pid))
-            session_file = self._platform_service._get_session_file(client_pid)
+            session_file = self._session_file_format.format(client_pid=client_pid)
             osr.assert_called_once_with(session_file)
 
     def test_start_batch_invalid(self):
@@ -510,7 +512,7 @@ default
 
         # FIXME This is the same as it is for test_open_session.  It should be refactored in
         # the service.py into a helper.  The bit about writing the session data to JSON.
-        session_file = self._platform_service._get_session_file(client_pid)
+        session_file = self._session_file_format.format(client_pid=client_pid)
         self.assertTrue(os.path.isfile(session_file),
                         msg = 'File does not exist: {}'.format(session_file))
         with open(session_file, 'r') as fid:
