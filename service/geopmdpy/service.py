@@ -164,6 +164,8 @@ class PlatformService(object):
         self._WATCH_INTERVAL_MSEC = 1000
         self._write_pid = None
         self._active_sessions = ActiveSessions()
+        self._session_ref_count = dict()
+        self._session_terminated = set{}
 
     def get_group_access(self, group):
         """Get the signals and controls in the allowed lists.
@@ -464,13 +466,49 @@ class PlatformService(object):
 
         """
         if self._active_sessions.is_client_active(client_pid):
-            return
-        signals, controls = self.get_user_access(user)
-        watch_id = self._watch_client(client_pid)
-        self._active_sessions.add_client(client_pid, signals, controls, watch_id)
+            self._session_ref_count[client_pid] += 1
+        else:
+            signals, controls = self.get_user_access(user)
+            watch_id = self._watch_client(client_pid)
+            self._active_sessions.add_client(client_pid, signals, controls, watch_id)
+            self._session_ref_count[client_pid] = 1
 
     def close_session(self, client_pid):
         """Close an active session for the client process.
+
+        There is a reference count that is incremented with every call to
+        open_session() and decremented with every call to close_session().
+        This method will only close a session when this reference count falls
+        to zero.  After closing a session, the client process is required to
+        call open_session() again before using any of the client-facing member
+        functions.
+
+        Closing an active session will remove the record of which
+        signals and controls the client process has access to; thus,
+        this record is updated to reflect changes to the policy when the
+        next session is opened by the process.
+
+        When closing a write-mode session, the control values that were
+        recorded when the session was promoted to write-mode are restored.
+
+        This method supports both the client DBus interface used to close a
+        session.  The client DBus interface only allows users to close
+        sessions that were created with their user ID.
+
+        A RuntimeError is raised if the client_pid does not have an
+        open session.
+
+        Args:
+            client_pid (int): Linux PID of the client thread
+
+        """
+        self._active_sessions.check_client_active(client_pid, 'PlatformCloseSession')
+        self._session_ref_count[client_pid] -= 1
+        if self._session_ref_count[client_pid] == 0:
+            self.close_session_admin(client_pid)
+
+    def close_session_admin(self, client_pid):
+        """Force closure of an active session associated with a client process.
 
         After closing a session, the client process is required to
         call open_session() again before using any of the client-facing
@@ -484,10 +522,9 @@ class PlatformService(object):
         When closing a write-mode session, the control values that were
         recorded when the session was promoted to write-mode are restored.
 
-        This method supports both the client and administrative DBus
-        interfaces that are used to close a session.  The client DBus
-        interface only allows users to close sessions that were created
-        with their user ID.
+        This method supports administrative DBus interface that is used to
+        force the closure of a session.  calling this DBus interface requires
+        CAP_SYSADMIN.
 
         A RuntimeError is raised if the client_pid does not have an
         open session.
@@ -496,7 +533,7 @@ class PlatformService(object):
             client_pid (int): Linux PID of the client thread
 
         """
-        self._active_sessions.check_client_active(client_pid, 'PlatformCloseSession')
+        self._active_sessions.check_client_active(client_pid, 'PlatformCloseSessionAdmin)'
         batch_pid = self._active_sessions.get_batch_server(client_pid)
         if batch_pid is not None:
             try:
@@ -510,6 +547,7 @@ class PlatformService(object):
             self._write_pid = None
         GLib.source_remove(self._active_sessions.get_watch_id(client_pid))
         self._active_sessions.remove_client(client_pid)
+        self._session_terminated.update(client_pid)
 
     def start_batch(self, client_pid, signal_config, control_config):
         """Start a batch server to support a client session.
@@ -762,6 +800,10 @@ class PlatformService(object):
             # daemon restart
             self._pio.save_control()
 
+    def _check_terminated(self, client_pid, method_name):
+        if client_pid in self.session_terminated:
+            raise RuntimeError(f'Client pid {client_pid} called method: {method_name} but the session was terminated by the administrator')
+
     def _watch_client(self, client_pid):
         return GLib.timeout_add(self._WATCH_INTERVAL_MSEC, self.check_client, client_pid)
 
@@ -874,7 +916,7 @@ class GEOPMService(object):
     @accepts_additional_arguments
     def PlatformCloseSessionAdmin(self, client_pid, **call_info):
         self._check_cap_sys_admin(call_info, "PlatformCloseSessionAdmin")
-        self._platform.close_session(client_pid)
+        self._platform.close_session_admin(client_pid)
 
     @accepts_additional_arguments
     def PlatformStartBatch(self, signal_config, control_config, **call_info):
