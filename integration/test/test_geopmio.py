@@ -40,7 +40,6 @@ import time
 import signal
 from contextlib import contextmanager
 
-import geopm_context
 import geopm_test_launcher
 import util
 

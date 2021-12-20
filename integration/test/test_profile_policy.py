@@ -44,7 +44,7 @@ import geopmpy.launcher
 import geopmpy.io
 import geopmpy.policy_store
 
-import util
+from . import util
 
 
 @util.skip_unless_do_launch()

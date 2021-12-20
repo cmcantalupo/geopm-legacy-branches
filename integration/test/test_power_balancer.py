@@ -42,7 +42,6 @@ import glob
 import pandas
 import time
 
-import geopm_context
 import geopmpy.agent
 import geopmpy.io
 import geopmdpy.error

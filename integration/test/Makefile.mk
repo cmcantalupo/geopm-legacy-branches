@@ -31,7 +31,6 @@
 
 EXTRA_DIST += integration/test/check_trace.py \
               integration/test/configure_test_template.sh \
-              integration/test/geopm_context.py \
               integration/test/geopm_test_launcher.py \
               integration/test/geopm_test_loop.sh \
               integration/test/__init__.py \

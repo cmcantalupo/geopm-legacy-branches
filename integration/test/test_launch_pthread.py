@@ -35,7 +35,6 @@ import sys
 import unittest
 import os
 
-import geopm_context
 import geopmpy.io
 import geopmpy.agent
 import geopmdpy.error

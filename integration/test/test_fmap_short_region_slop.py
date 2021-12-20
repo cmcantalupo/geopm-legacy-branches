@@ -53,27 +53,16 @@ import matplotlib.pyplot as plt
 import pandas
 
 # Put integration test directory into the path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-try:
-    # Try to load geopmpy without modifiying the path
-    import geopmpy.io
-    import geopmpy.agent
-    import geopmdpy.error
-    import geopmpy.hash
-except ImportError:
-    # If geopmpy is not installed in the PYTHONPATH then add local
-    # copy to path
-    from integration.test import geopm_context
-    import geopmpy.io
-    import geopmpy.agent
-    import geopmdpy.error
-    import geopmpy.hash
+import geopmpy.io
+import geopmpy.agent
+import geopmdpy.error
+import geopmpy.hash
 
-from integration.test import util
+from . import util
 if util.do_launch():
     # If we are not skipping the launch we need to import the test
     # launcher
-    from integration.test import geopm_test_launcher
+    from . import geopm_test_launcher
 
 # Globals controlling uniform y axis limits in all plots
 g_plot_energy_lim = [4000, 11000]

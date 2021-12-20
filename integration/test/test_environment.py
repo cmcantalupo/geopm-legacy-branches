@@ -36,7 +36,6 @@ import unittest
 import os
 import json
 
-from integration.test import geopm_context
 import geopmpy.io
 import geopmpy.agent
 

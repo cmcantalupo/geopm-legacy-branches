@@ -41,11 +41,11 @@ import math
 import shlex
 import getpass
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import geopm_context
 import geopmpy.launcher
+from . import util as test_util
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from experiment import util
-import util as test_util
 
 
 # TODO: update tests to use util

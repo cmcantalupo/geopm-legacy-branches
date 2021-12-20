@@ -36,7 +36,6 @@ import unittest
 import os
 import pandas
 
-import geopm_context
 import geopmpy.io
 import geopmpy.agent
 

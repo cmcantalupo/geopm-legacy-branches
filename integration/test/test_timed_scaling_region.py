@@ -43,7 +43,6 @@ import unittest
 import os
 import glob
 
-import geopm_context
 import geopmpy.io
 import geopmpy.agent
 import geopmdpy.error

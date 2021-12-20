@@ -40,7 +40,6 @@ import subprocess
 import io
 import json
 
-import geopm_context
 import geopmpy.agent
 import geopm_test_launcher
 import util

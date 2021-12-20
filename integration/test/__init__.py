@@ -32,5 +32,4 @@
 
 from __future__ import absolute_import
 
-import geopm_context
 from geopmpy.version import __version__

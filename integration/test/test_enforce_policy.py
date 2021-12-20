@@ -40,11 +40,10 @@ import subprocess
 import io
 import json
 
-import geopm_context
 import geopmpy.agent
-import geopm_test_launcher
-import util
 import geopmdpy.topo
+from . import geopm_test_launcher
+from . import util
 
 
 @util.skip_unless_do_launch()

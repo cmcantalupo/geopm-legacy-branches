@@ -37,14 +37,14 @@ import os
 import numpy
 import socket
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from integration.test import geopm_context
-from integration.test import util
 import geopmpy.agent
 import geopmpy.io
 import geopmpy.hash
-from integration.experiment import machine
-import geopm_test_launcher
+from . import util
+from . import geopm_test_launcher
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from experiment import machine
 
 
 class AppConf(object):

@@ -32,13 +32,13 @@
 #
 import subprocess
 import unittest
-import geopmdpy.pio as pio
-import geopmdpy.topo as topo
 import time
 
-import geopm_context
-import geopm_test_launcher
-import util
+from geopmdpy import pio
+from geopmdpy import topo
+
+from . import geopm_test_launcher
+from . import util
 
 @util.skip_unless_batch()
 class TestIntegrationProgrammableCounters(unittest.TestCase):
