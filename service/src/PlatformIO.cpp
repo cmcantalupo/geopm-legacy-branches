@@ -545,14 +545,18 @@ namespace geopm
 
     void PlatformIOImp::save_control(const std::string &save_dir)
     {
-        throw Exception("PlatformIOImp::save_control()",
-                        GEOPM_ERROR_NOT_IMPLEMENTED, __FILE__, __LINE__);
+        for (auto &it : m_iogroup_list) {
+            std::string save_path = save_dir + '/' + it->name() + "-save-control.json";
+            it->save_control(save_path);
+        }
     }
 
     void PlatformIOImp::restore_control(const std::string &save_dir)
     {
-        throw Exception("PlatformIOImp::save_control()",
-                        GEOPM_ERROR_NOT_IMPLEMENTED, __FILE__, __LINE__);
+        for (auto &it : m_iogroup_list) {
+            std::string save_path = save_dir + '/' + it->name() + "-save-control.json";
+            it->restore_control(save_path);
+        }
     }
 
     std::function<double(const std::vector<double> &)> PlatformIOImp::agg_function(const std::string &signal_name) const
@@ -884,6 +888,32 @@ extern "C" {
         int err = 0;
         try {
             geopm::platform_io().restore_control();
+        }
+        catch (...) {
+            err = geopm::exception_handler(std::current_exception());
+            err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
+        }
+        return err;
+    }
+
+    int geopm_pio_save_control_dir(const char *save_dir)
+    {
+        int err = 0;
+        try {
+            geopm::platform_io().save_control(save_dir);
+        }
+        catch (...) {
+            err = geopm::exception_handler(std::current_exception());
+            err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
+        }
+        return err;
+    }
+
+    int geopm_pio_restore_control_dir(const char *save_dir)
+    {
+        int err = 0;
+        try {
+            geopm::platform_io().restore_control(save_dir);
         }
         catch (...) {
             err = geopm::exception_handler(std::current_exception());
