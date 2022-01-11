@@ -37,6 +37,7 @@ Environment=PYTHONUNBUFFERED=true
 Type=dbus
 BusName=io.github.geopm
 ExecStart=/usr/bin/geopmd
+Restart=on-failure
 
 [Install]
 WantedBy=default.target

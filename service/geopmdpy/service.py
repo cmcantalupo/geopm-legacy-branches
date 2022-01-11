@@ -63,6 +63,9 @@ class ActiveSessions(object):
     def __init__(self):
         self._sessions = dict()
         self._VAR_PATH = GEOPM_SERVICE_VAR_PATH
+        if os.path.isdir(self._VAR_PATH): # check stat date against uptime for system
+            pattern = 'session-*.json'
+            all_session_files = glob.glob(os.path.join(self._VAR_PATH, pattern))
 
     def is_client_active(self, client_pid):
         result = client_pid in self._sessions
@@ -769,11 +772,11 @@ class PlatformService(object):
                 session_uid = os.stat(f'/proc/{write_pid}/status').st_uid
                 session_user = pwd.getpwuid(session_uid).pw_name
                 self.open_session(session_user, write_pid)
-            self._active_sessions.set_write_client(write_pid)
-            self._write_pid = write_pid
             save_dir = os.path.join(self._VAR_PATH, self._SAVE_DIR)
             os.makedirs(save_dir)
             self._pio.save_control_dir(save_dir)
+            self._active_sessions.set_write_client(write_pid)
+            self._write_pid = write_pid
 
     def _watch_client(self, client_pid):
         return GLib.timeout_add(self._WATCH_INTERVAL_MSEC, self.check_client, client_pid)
