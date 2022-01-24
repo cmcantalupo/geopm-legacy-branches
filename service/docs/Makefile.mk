@@ -29,6 +29,15 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+# The transform variable will transform any installed file beginning
+# with "GEOPM_CXX_MAN_" to begin with "geopm::".  This is to avoid
+# having make targets that contain the colon character.  See autotools
+# documentation below.
+#
+# https://www.gnu.org/software/autoconf/manual/autoconf-2.67/html_node/Transformation-Rules.html
+#
+transform='s/GEOPM_CXX_MAN_/geopm::/'
+
 EXTRA_DIST += docs/geninfo.sh \
               docs/source/admin.rst \
               docs/source/analysis.rst \
