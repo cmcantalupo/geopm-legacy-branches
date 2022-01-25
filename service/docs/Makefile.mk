@@ -187,7 +187,7 @@ base_man = docs/build/man/geopmadmin.1 \
 
 all_man = $(dist_man_MANS) $(base_man)
 
-$(all_man): docs/build/man/%: $(top_srcdir)/docs/source/%.rst libgeopmd.la $(abs_srcdir)/geopmdpy/version.py
+$(all_man): docs/build/man/%: $(top_srcdir)/docs/source/%.rst
 	LD_LIBRARY_PATH=.libs:$(LD_LIBRARY_PATH) \
 	PYTHONPATH=$(abs_srcdir):$(PYTHONPATH) \
 	sphinx-build -M man $(abs_srcdir)/docs/source docs/build
