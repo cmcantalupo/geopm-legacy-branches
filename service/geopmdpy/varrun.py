@@ -41,6 +41,7 @@ the daemon to cleanly restart.
 """
 
 import os
+import sys
 import stat
 import json
 import jsonschema
@@ -64,7 +65,7 @@ class ActiveSessions(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, var_path=GEOPM_SERVICE_VAR_PATH):
         """Create an ActiveSessions object that tracks geopmd session files
 
         The geopmd session files are stored in the directory
@@ -107,7 +108,7 @@ class ActiveSessions(object):
                             read from the var_path directory
 
         """
-        self._VAR_PATH = GEOPM_SERVICE_VAR_PATH
+        self._VAR_PATH = var_path
         self._INVALID_PID = -1
         self._daemon_uid = os.getuid()
         self._daemon_gid = os.getgid()
@@ -128,13 +129,17 @@ class ActiveSessions(object):
         if os.path.islink(self._VAR_PATH):
             # TODO enhance warning message to provide user and group
             # ownership of the symbolic link that was deleted
-            sys.stderr.write(f'Warning: <geopm> {GEOPM_SERVICE_VAR_PATH} is a symbolic link, the link will be deleted')
+            sys.stderr.write(f'Warning: <geopm> {self._VAR_PATH} is a symbolic link, the link will be deleted')
             os.unlink(self._VAR_PATH)
         if not os.path.isdir(self._VAR_PATH):
             os.mkdir(self._VAR_PATH, mode=0o700)
         else:
             # Do we need a chown? print a warning?
-            os.chmod(self._VAR_PATH, mode=0o700)
+            st = os.stat(self._VAR_PATH)
+            perm_mode = stat.S_IMODE(st.st_mode)
+            if perm_mode != 0o700:
+                sys.stderr.write(f'Warning: <geopm> {self._VAR_PATH} has wrong permissions, reseting to 0o700, current value: {oct(perm_mode)}')
+                os.chmod(self._VAR_PATH, mode=0o700)
         for sess_path in glob.glob(self._get_session_path('*')):
             self._load_session_file(sess_path)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+#
 #  Copyright (c) 2015 - 2021, Intel Corporation
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -32,18 +32,51 @@
 #
 
 import unittest
+from unittest import mock
+import os
+import stat
+import tempfile
 
-from TestAccess import *
-from TestController import *
-from TestDBusXML import *
-from TestError import *
-from TestPIO import *
-from TestPlatformService import *
-from TestRequestQueue import *
-from TestSession import *
-from TestTimedLoop import *
-from TestTopo import *
-from TestActiveSessions import *
+from geopmdpy.varrun import ActiveSessions
+
+class TestActiveSessions(unittest.TestCase):
+    def setUp(self):
+        self._test_name = 'TestActiveSessions'
+        self._TEMP_DIR = tempfile.TemporaryDirectory(self._test_name)
+
+    def tearDown(self):
+        self._TEMP_DIR.cleanup()
+
+    def check_dir_perms(self, path):
+        st = os.stat(path)
+        self.assertEqual(0o700, stat.S_IMODE(st.st_mode))
+
+    def test_default_creation(self):
+        """Test default creation of an ActiveSessions object
+
+        Test creates an ActiveSessions object when the geopm-service
+        directory is not present.
+
+        """
+        sess_path = f'{self._TEMP_DIR.name}/geopm-service'
+        act_sess = ActiveSessions(sess_path)
+        self.check_dir_perms(sess_path)
+
+    def test_default_creation_negative(self):
+        """Test default creation of an ActiveSessions object
+
+        Test creates an ActiveSessions object when the geopm-service
+        directory is present with wrong permissions.
+
+        """
+        sess_path = f'{self._TEMP_DIR.name}/geopm-service'
+        os.umask(0o000)
+        os.mkdir(sess_path, mode=0o755)
+        with mock.patch('sys.stderr.write', return_value=None) as mock_err:
+            act_sess = ActiveSessions(sess_path)
+            mock_err.assert_called_once_with(f'Warning: <geopm> {sess_path} has wrong permissions, reseting to 0o700, current value: 0o755')
+        self.check_dir_perms(sess_path)
+
 
 if __name__ == '__main__':
     unittest.main()

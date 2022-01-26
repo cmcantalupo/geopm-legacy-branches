@@ -41,6 +41,7 @@ EXTRA_DIST += geopmdpy_test/__main__.py \
               geopmdpy_test/TestSession.py \
               geopmdpy_test/TestTimedLoop.py \
               geopmdpy_test/TestController.py \
+              geopmdpy_test/TestActiveSessions.py \
               # end
 
 GEOPMDPY_TESTS = geopmdpy_test/pytest_links/TestPlatformService.test__read_allowed_invalid \
@@ -121,6 +122,8 @@ GEOPMDPY_TESTS = geopmdpy_test/pytest_links/TestPlatformService.test__read_allow
                  geopmdpy_test/pytest_links/TestTimedLoop.test_timed_loop_fixed \
                  geopmdpy_test/pytest_links/TestTimedLoop.test_timed_loop_infinite \
                  geopmdpy_test/pytest_links/TestTimedLoop.test_timed_loop_invalid \
+                 geopmdpy_test/pytest_links/TestActiveSessions.test_default_creation \
+                 geopmdpy_test/pytest_links/TestActiveSessions.test_default_creation_negative \
                  # end
 
 TESTS += $(GEOPMDPY_TESTS)
