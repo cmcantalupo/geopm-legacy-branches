@@ -124,7 +124,7 @@ class ActiveSessions(object):
                 'batch_server': {'type' : 'number'}
             },
             'additionalProperties' : False,
-            'required' : ['client_pid', 'mode', 'signals', 'controls', 'watch_id']
+            'required' : ['client_pid', 'mode', 'signals', 'controls']
         }
         if os.path.islink(self._VAR_PATH):
             # TODO enhance warning message to provide user and group
@@ -206,7 +206,7 @@ class ActiveSessions(object):
         client PID already has an open session.
 
         Args:
-            client_pid (int): Linux PID that opened the session.
+            client_pid (int): Linux PID that opened the session
 
             signals (list(str)): List of signal names that are allowed
                                  to be read by the client
@@ -240,7 +240,7 @@ class ActiveSessions(object):
             client_pid (int): Linux PID that opened the session
 
         Raises:
-            RuntimeError: Client does not have an open sessiom
+            RuntimeError: Client does not have an open session
 
         """
         self.check_client_active(client_pid, 'remove_client')
@@ -266,37 +266,148 @@ class ActiveSessions(object):
             bool: True if the client PID holds the write lock, and
                   false otherwise
 
+        Raises:
+            RuntimeError: Client does not have an open session
+
         """
         self.check_client_active(client_pid, 'get_mode')
         return self._sessions[client_pid]['mode'] == 'rw'
 
     def get_signals(self, client_pid):
+        """Query all signal names that are available
+
+        Creates a list of all signal names that are available to the
+        session opened by the client PID.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+        Returns:
+            list(str): Signal name access list for the session
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'get_signals')
-        return self._sessions[client_pid]['signals']
+        return list(self._sessions[client_pid]['signals'])
 
     def get_controls(self, client_pid):
+        """Query all control names that are available
+
+        Creates a list of all control names that are available to the
+        session opened by the client PID.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+        Returns:
+            list(str): Control name access list for the session
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'get_controls')
-        return self._sessions[client_pid]['controls']
+        return list(self._sessions[client_pid]['controls'])
 
     def get_watch_id(self, client_pid):
+        """Query the GLib watch ID for tracking the session lifetime
+
+        The watch ID is not valid in the case where the geopmd process
+        restarts.  When a new geopmd process starts it will read files
+        that contain watch ID values, however, the set_watch_id()
+        method must be called with an updated watch ID for each active
+        client session when geopmd starts.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+        Returns:
+            int: GLib watch ID to track the session lifetime
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'get_watch_id')
         return self._sessions[client_pid]['watch_id']
 
     def set_watch_id(self, client_pid, watch_id):
+        """Set the GLib watch ID for tracking the session lifetime
+
+        Store the GLib watch ID after registering the callback with
+        GLib.timeout_add().
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+            watch_id (int): GLib watch ID returned by the
+                            GLib.timeout_add() method
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'get_watch_id')
         self._sessions[client_pid]['watch_id'] = watch_id
         self._update_session_file(client_pid)
 
     def get_batch_server(self, client_pid):
+        """Query the batch server for the client session
+
+        In the case where the client has an open batch server, this
+        method returns the Linux PID of the batch server.  If there is
+        no active batch server then None is returned.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+        Returns:
+            int: The Linux PID of the batch server or None
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'get_batch_server')
         return self._sessions[client_pid].get('batch_server')
 
     def set_write_client(self, client_pid):
+        """Mark a client session as the write mode client
+
+        This method identifies that the client session is able to
+        write through the service.  The file that stores this
+        information about the session will be updated atomically,
+        however it is the user's responsibility to maintain the
+        requirement for one write mode session at any one time.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'set_write_client')
         self._sessions[client_pid]['mode'] = 'rw'
         self._update_session_file(client_pid)
 
     def set_batch_server(self, client_pid, batch_pid):
+        """Set the Linux PID of the batch server supporting a client session
+
+        This method is used to store the PID after a batch server is created.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+            batch_pid (int): Linux PID of the batch server created for
+                             the client session
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'set_batch_server')
         if 'batch_server' in self._sessions[client_pid]:
             current_server = self._sessions[client_pid]['batch_server']
@@ -305,6 +416,18 @@ class ActiveSessions(object):
         self._update_session_file(client_pid)
 
     def remove_batch_server(self, client_pid):
+        """Remove the record for the batch server supporting a client session
+
+        This method is used to remove the record of a batch server
+        after it is closed.
+
+        Args:
+            client_pid (int): Linux PID that opened the session
+
+        Raises:
+            RuntimeError: Client does not have an open session
+
+        """
         self.check_client_active(client_pid, 'remove_batch_server')
         self._sessions[client_pid].pop('batch_server')
         self._update_session_file(client_pid)
