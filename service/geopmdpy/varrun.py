@@ -254,9 +254,16 @@ class ActiveSessions(object):
         """
         return list(self._sessions.keys())
 
-    def get_mode(self, client_pid):
+    def is_write_client(self, client_pid):
+        """Query if the client PID currently holds the write lock
+
+        Returns:
+            bool: True if the client PID holds the write lock, and
+                  false otherwise
+
+        """
         self.check_client_active(client_pid, 'get_mode')
-        return self._sessions[client_pid]['mode']
+        return self._sessions[client_pid]['mode'] == 'rw'
 
     def get_signals(self, client_pid):
         self.check_client_active(client_pid, 'get_signals')

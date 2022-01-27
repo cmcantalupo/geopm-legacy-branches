@@ -78,7 +78,7 @@ class PlatformService(object):
         self._write_pid = None
         self._active_sessions = varrun.ActiveSessions()
         for client_pid in self._active_sessions.get_clients():
-            is_writer = self._active_sessions.get_mode(client_pid) == 'rw'
+            is_writer = self._active_sessions.is_write_client(client_pid)
             is_active = self.check_client(client_pid)
             if is_active:
                 watch_id = self._watch_client(client_pid)
@@ -420,7 +420,7 @@ class PlatformService(object):
         """
         self._active_sessions.check_client_active(client_pid, 'PlatformCloseSession')
         batch_pid = self._active_sessions.get_batch_server(client_pid)
-        is_writer = self._active_sessions.get_mode(client_pid) == 'rw'
+        is_writer = self._active_sessions.is_write_client(client_pid)
         if batch_pid is not None:
             try:
                 self._pio.stop_batch_server(batch_pid)
