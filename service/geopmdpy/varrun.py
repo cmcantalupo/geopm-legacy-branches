@@ -48,6 +48,7 @@ import jsonschema
 import glob
 import psutil
 import uuid
+import fcntl
 
 
 GEOPM_SERVICE_VAR_PATH = '/var/run/geopm-service'
@@ -299,7 +300,6 @@ class ActiveSessions(object):
 
         """
         self._VAR_PATH = var_path
-        self._INVALID_PID = -1
         self._daemon_uid = os.getuid()
         self._daemon_gid = os.getgid()
         self._sessions = dict()
@@ -307,14 +307,13 @@ class ActiveSessions(object):
             'type' : 'object',
             'properties' : {
                 'client_pid' : {'type' : 'number'},
-                'mode' : {'type' : 'string', "enum" : ["r", "rw"]},
                 'signals' : {'type' : 'array', 'items' : {'type' : 'string'}},
                 'controls' : {'type' : 'array', 'items' : {'type' : 'string'}},
                 'watch_id' : {'type' : 'number'},
                 'batch_server': {'type' : 'number'}
             },
             'additionalProperties' : False,
-            'required' : ['client_pid', 'mode', 'signals', 'controls']
+            'required' : ['client_pid', 'signals', 'controls']
         }
         secure_make_dirs(self._VAR_PATH)
 
@@ -374,11 +373,9 @@ class ActiveSessions(object):
 
             /var/run/geopm-service/session-*.json
 
-        The session file is created with the JSON object property
-        "mode" set to "r" (read mode) and without the "batch_server"
-        property specified.  These properties may be modified by the
-        set_write_client() or set_batch_server() methods after the
-        client is added.
+        The session file is created without the JSON object property
+        "batch_server" specified.  This properties may be modified by the
+        set_batch_server() method after the client is added.
 
         This operation creates the session file atomically, but does
         not modify the session properties nor the session file if the
@@ -400,7 +397,6 @@ class ActiveSessions(object):
         if self.is_client_active(client_pid):
             return
         session_data = {'client_pid': client_pid,
-                        'mode': 'r',
                         'signals': list(signals),
                         'controls': list(controls),
                         'watch_id': watch_id}
@@ -438,20 +434,6 @@ class ActiveSessions(object):
 
         """
         return list(self._sessions.keys())
-
-    def is_write_client(self, client_pid):
-        """Query if the client PID currently holds the write lock
-
-        Returns:
-            bool: True if the client PID holds the write lock, and
-                  false otherwise
-
-        Raises:
-            RuntimeError: Client does not have an open session
-
-        """
-        self.check_client_active(client_pid, 'get_mode')
-        return self._sessions[client_pid]['mode'] == 'rw'
 
     def get_signals(self, client_pid):
         """Query all signal names that are available
@@ -552,26 +534,6 @@ class ActiveSessions(object):
         """
         self.check_client_active(client_pid, 'get_batch_server')
         return self._sessions[client_pid].get('batch_server')
-
-    def set_write_client(self, client_pid):
-        """Mark a client session as the write mode client
-
-        This method identifies that the client session is able to
-        write through the service.  The file that stores this
-        information about the session will be updated atomically,
-        however it is the user's responsibility to maintain the
-        requirement for one write mode session at any one time.
-
-        Args:
-            client_pid (int): Linux PID that opened the session
-
-        Raises:
-            RuntimeError: Client does not have an open session
-
-        """
-        self.check_client_active(client_pid, 'set_write_client')
-        self._sessions[client_pid]['mode'] = 'rw'
-        self._update_session_file(client_pid)
 
     def set_batch_server(self, client_pid, batch_pid):
         """Set the Linux PID of the batch server supporting a client session
@@ -696,11 +658,83 @@ class ActiveSessions(object):
             if batch_pid is not None and \
                self._is_pid_valid(batch_pid, file_time) == False:
                 sess.pop('batch_server')
+            self._sessions[client_pid] = dict(sess)
+            self._update_session_file(client_pid)
         else:
-            # Invalid session, remove batch server
-            sess['client_pid'] = self._INVALID_PID
-            if batch_pid is not None:
-                sess.pop('batch_server')
+           os.rename(sess_path, renamed_path)
 
-        self._sessions[client_pid] = dict(sess)
-        self._update_session_file(client_pid)
+
+class WriteLock(object):
+    def __init__(self, var_path=GEOPM_SERVICE_VAR_PATH):
+        self._VAR_PATH = var_path
+        self._LOCK_PATH = os.path.join(self._VAR_PATH, "CONTROL_LOCK")
+
+    def __enter__(self):
+        old_mask = os.umask(0o077)
+        # TODO: If lock file already exists we need to validate security
+        self._fid = open(self._LOCK_PATH, 'a+')
+        os.umask(old_mask)
+        fcntl.lockf(self._fid, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        fcntl.lockf(self._fid, fcntl.LOCK_UN)
+        self._fid.close()
+
+    def try_lock(self, pid=None):
+        """Get the PID that holds the lock or set lock
+
+        Returns the PID that currently holds the lock.  If the user specifies
+        a PID and the lock is not held by another process, then the lock will
+        be assigned, and the input pid will be returned.  The user must check
+        the return value to determine if a request to assign the lock was
+        successful, an error is not raised if the lock is held by another PID.
+
+        None is returned if the write lock is not held by any active session
+        and the user does not specify a pid.
+
+        Args:
+            pid (int): The PID to assign the lock
+
+        Returns:
+            int: The PID of the session that holds the write lock upon return
+                 or None if the write lock is not held
+
+        """
+        file_pid = None
+        self._fid.seek(0, os.SEEK_END)
+        if self._fid.tell() == 0 and pid is not None:
+            self._fid.write(str(pid))
+            file_pid = pid
+        if self._fid.tell() != 0:
+            self._fid.seek(0)
+            contents = self._fid.read(64)
+            file_pid = int(contents)
+        return file_pid
+
+    def unlock(self, pid):
+        """Release the write lock
+
+        Release the write lock from ownership by a specified PID.  If the lock
+        is not currently assigned to the specified PID, then a RuntimeError is
+        raised.
+
+        Args:
+            pid (int): The PID that the lock is assigned to
+
+        Raises:
+            RuntimeError: The specified PID does not currently hold the lock
+
+        """
+        err_str = None
+        self._fid.seek(0, os.SEEK_END)
+        if self._fid.tell() == 0:
+            raise RuntimeError('Lock is not held by any PID')
+        else:
+            self._fid.seek(0)
+            contents = self._fid.read(64)
+            file_pid = int(contents)
+            if file_pid == pid:
+                self._fid.truncate(0)
+            else:
+                raise RuntimeError(f'Lock is held by another PID: {file_pid}')

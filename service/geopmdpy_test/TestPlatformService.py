@@ -39,7 +39,7 @@ import unittest
 import re
 from unittest import mock
 import tempfile
-from geopmdpy.varrun import ActiveSessions
+from geopmdpy.varrun import ActiveSessions, WriteLock
 
 # Patch dlopen to allow the tests to run when there is no build
 with mock.patch('cffi.FFI.dlopen', return_value=mock.MagicMock()):
@@ -58,7 +58,12 @@ class TestPlatformService(unittest.TestCase):
         self._mock_active_sessions.check_client_active.side_effect = \
             RuntimeError(self._check_client_active_err_msg) # Until open_mock_session is called
 
-        with mock.patch('geopmdpy.varrun.ActiveSessions', return_value=self._mock_active_sessions):
+        self._mock_write_lock = mock.create_autospec(WriteLock)
+        self._mock_write_lock.try_lock.return_value = None
+        self._mock_write_lock.unlock.return_value = None
+
+        with mock.patch('geopmdpy.varrun.ActiveSessions', return_value=self._mock_active_sessions), \
+             mock.patch('geopmdpy.varrun.WriteLock', return_value=self._mock_write_lock):
             self._platform_service = PlatformService()
 
         self._platform_service._CONFIG_PATH = self._CONFIG_PATH.name
@@ -405,7 +410,6 @@ default
         self._mock_active_sessions.get_signals.return_value = signals
         self._mock_active_sessions.get_watch_id.return_value = watch_id
         self._mock_active_sessions.get_batch_server.return_value = None
-        self._mock_active_sessions.is_write_client.return_value = False
 
         with mock.patch('geopmdpy.service.PlatformService._get_user_groups', return_value=[]), \
              mock.patch('geopmdpy.service.PlatformService._watch_client', return_value=watch_id), \
@@ -452,9 +456,7 @@ default
         session_data = self.open_mock_session('')
         client_pid = session_data['client_pid']
         watch_id = session_data['watch_id']
-
-        self._mock_active_sessions.is_write_client.return_value = True
-
+        self._mock_write_lock.try_lock.return_value = client_pid
         with mock.patch('geopmdpy.pio.save_control_dir') as mock_save_control_dir, \
              mock.patch('geopmdpy.pio.write_control') as mock_write_control, \
              mock.patch('os.getsid', return_value=client_pid) as mock_getsid:
@@ -469,8 +471,6 @@ default
             mock_restore_control_dir.assert_called_once()
             save_dir = os.path.join(self._platform_service._VAR_PATH,
                                     self._platform_service._SAVE_DIR)
-            mock_source_remove.assert_called_once_with(watch_id)
-            self.assertIsNone(self._platform_service._write_pid)
             mock_source_remove.assert_called_once_with(watch_id)
             self.assertFalse(self._platform_service._active_sessions.is_client_active(client_pid))
             session_file = self._session_file_format.format(client_pid=client_pid)
@@ -506,18 +506,26 @@ default
                                                control_config)
 
     def test_start_batch_write_blocked(self):
-        client_pid = -999
-        client_sid = -333
-        other_pid = -666
+        """Write mode batch server will not start when write lock is held
+
+        This test calls write_control without a session leader, and then a
+        different PID tries to create a write mode batch server with a session
+        leader.  This request should fail.
+
+        """
+        client_pid = 999
+        client_sid = 333
+        other_pid = 666
         control_name = 'geopm'
         domain = 7
         domain_idx = 42
         setting = 777
         session_data = self.open_mock_session('other', other_pid)
 
+        self._mock_write_lock.try_lock.return_value = other_pid
         with mock.patch('geopmdpy.pio.write_control', return_value=[]) as mock_write_control, \
              mock.patch('geopmdpy.pio.save_control_dir'), \
-             mock.patch('os.getsid', return_value=client_sid) as mock_getsid:
+             mock.patch('os.getsid', return_value=other_pid) as mock_getsid:
             self._platform_service.write_control(other_pid, control_name, domain, domain_idx, setting)
             mock_write_control.assert_called_once_with(control_name, domain, domain_idx, setting)
 
@@ -526,10 +534,17 @@ default
         valid_controls = session_data['controls']
         signal_config = [(0, 0, sig) for sig in valid_signals]
         control_config = [(0, 0, con) for con in valid_controls]
-        err_msg = f'The PID {client_pid} requested write access, but the geopm service already has write mode client with PID or SID of {other_pid}'
+        mock_st = mock.MagicMock()
+        mock_st.st_uid = client_pid
+        mock_pwuid = mock.MagicMock()
+        mock_pwuid.pw_name = 'test_user'
+        err_msg = f'The PID {client_pid} requested write access, but the geopm service already has write mode client with PID or SID of {abs(other_pid)}'
+
         with self.assertRaisesRegex(RuntimeError, err_msg), \
              mock.patch('geopmdpy.pio.start_batch_server', return_value = (2345, "2345")), \
              mock.patch('os.getsid', return_value=client_sid) as mock_getsid, \
+             mock.patch('os.stat', return_value=mock_st) as mock_stat, \
+             mock.patch('pwd.getpwuid', return_value=mock_pwuid) as mock_getpwuid, \
              mock.patch('psutil.pid_exists', return_value=True) as mock_pid_exists:
             self._platform_service.start_batch(client_pid, signal_config,
                                                control_config)
@@ -546,6 +561,7 @@ default
 
         expected_result = (1234, "1234")
 
+        self._mock_write_lock.try_lock.return_value = client_pid
         with mock.patch('geopmdpy.pio.start_batch_server', return_value=expected_result), \
              mock.patch('geopmdpy.pio.save_control_dir'), \
              mock.patch('os.getsid', return_value=client_pid) as mock_getsid:
@@ -553,8 +569,6 @@ default
                                                                control_config)
         self.assertEqual(expected_result, actual_result,
                          msg='start_batch() did not pass back correct result')
-
-        self.assertEqual(self._platform_service._write_pid, client_pid)
 
         save_dir = os.path.join(self._platform_service._VAR_PATH,
                                 self._platform_service._SAVE_DIR)
@@ -610,6 +624,7 @@ default
         session_data = self.open_mock_session('')
         client_pid = session_data['client_pid']
 
+        self._mock_write_lock.try_lock.return_value = client_pid
         control_name = 'geopm'
         domain = 7
         domain_idx = 42
