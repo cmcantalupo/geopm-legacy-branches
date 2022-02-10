@@ -128,7 +128,6 @@ GEOPMDPY_TESTS = geopmdpy_test/pytest_links/TestPlatformService.test__read_allow
                  geopmdpy_test/pytest_links/TestActiveSessions.test_creation_json \
                  geopmdpy_test/pytest_links/TestActiveSessions.test_load_clients \
                  geopmdpy_test/pytest_links/TestActiveSessions.test_add_remove_client \
-                 geopmdpy_test/pytest_links/TestActiveSessions.test_write_client \
                  geopmdpy_test/pytest_links/TestActiveSessions.test_batch_server \
                  geopmdpy_test/pytest_links/TestActiveSessions.test_batch_server_service_restart \
                  geopmdpy_test/pytest_links/TestActiveSessions.test_batch_server_bad_service_restart \
