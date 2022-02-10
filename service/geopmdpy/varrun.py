@@ -671,10 +671,16 @@ class WriteLock(object):
 
     def __enter__(self):
         old_mask = os.umask(0o077)
-        # TODO: If lock file already exists we need to validate security
-        self._fid = open(self._LOCK_PATH, 'a+')
+        self._fid = None
+        while self._fid is None:
+            self._fid = open(self._LOCK_PATH, 'a+')
+            fcntl.lockf(self._fid, fcntl.LOCK_EX)
+            contents = secure_read_file(self._LOCK_PATH)
+            if contents is None:
+                fcntl.lockf(self._fid, fcntl.LOCK_UN)
+                self._fid.close()
+                self._fid = None
         os.umask(old_mask)
-        fcntl.lockf(self._fid, fcntl.LOCK_EX)
         return self
 
     def __exit__(self, type, value, traceback):
